@@ -1,4 +1,4 @@
--- HFUIEVHJSADVBHJDAS
+-- //323
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -72,6 +72,7 @@ Library.Tabs = {}
 Library.CurrentTab = nil
 Library.NotificationPosition = "BottomRight" -- Default notification position
 Library.HideInfo = false -- Hide player info (icon and username)
+Library.ToggleKey = Enum.KeyCode.RightShift -- Default toggle key
 
 -- // Initialize GUI
 
@@ -328,6 +329,18 @@ local CloseButton = createInstance("TextButton", {
 CloseButton.MouseButton1Click:Connect(function()
 	Neptune:Destroy()
 end)
+
+-- UI Toggle Keybind
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed and input.KeyCode == Library.ToggleKey then
+		Holder.Visible = not Holder.Visible
+	end
+end)
+
+-- Function to set toggle key
+function Library:SetToggleKey(keyCode)
+	self.ToggleKey = keyCode
+end
 
 -- // Color Picker System
 
@@ -873,33 +886,19 @@ function Library:CreateTab(name)
 	-- Tab switching
 	tabButton.MouseButton1Click:Connect(function()
 		for _, otherTab in pairs(Library.Tabs) do
-			-- Hide all cards from other tabs
+			-- Hide all card wrappers from other tabs
 			for _, card in pairs(otherTab.Cards) do
-				card.Frame.Visible = false
+				if card.Wrapper then
+					card.Wrapper.Visible = false
+				end
 			end
 			otherTab.Button.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 		end
 		
-		-- Show cards from this tab
+		-- Show card wrappers from this tab
 		for _, card in pairs(Tab.Cards) do
-			card.Frame.Visible = true
-		end
-		
-		-- Show/hide rows based on visibility
-		for _, row in pairs(Scroll:GetChildren()) do
-			if row:IsA("Frame") and row.Name:match("Row") then
-				local hasVisibleCard = false
-				for _, wrapper in pairs(row:GetChildren()) do
-					if wrapper:IsA("Frame") then
-						for _, cardFrame in pairs(wrapper:GetChildren()) do
-							if cardFrame:IsA("Frame") and cardFrame.Visible then
-								hasVisibleCard = true
-								break
-							end
-						end
-					end
-				end
-				row.Visible = hasVisibleCard
+			if card.Wrapper then
+				card.Wrapper.Visible = true
 			end
 		end
 		
@@ -937,68 +936,33 @@ function Library:CreateTab(name)
 		Card.LayoutOrder = #Tab.Cards + 1
 		Card.Side = side or "Left" -- Default to Left
 		
-		-- Find or create the appropriate row wrapper
-		local rowWrapper
-		local rowIndex = math.ceil(Card.LayoutOrder / 2)
+		-- Create CardWrapper (full width container)
+		local cardWrapper = createInstance("Frame", {
+			Name = "CardWrapper_" .. Card.LayoutOrder,
+			Size = UDim2.new(1, 0, 0, 329),
+			Parent = Scroll,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			LayoutOrder = Card.LayoutOrder,
+			Visible = Library.CurrentTab == Tab,
+			ZIndex = 1
+		})
 		
-		-- Look for existing row
-		for _, child in pairs(Scroll:GetChildren()) do
-			if child.Name == "Row" .. rowIndex and child:IsA("Frame") then
-				rowWrapper = child
-				break
-			end
-		end
-		
-		-- Create new row if doesn't exist
-		if not rowWrapper then
-			rowWrapper = createInstance("Frame", {
-				Name = "Row" .. rowIndex,
-				Size = UDim2.new(1, 0, 0, 329),
-				Parent = Scroll,
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				LayoutOrder = rowIndex,
-				ZIndex = 1
-			})
-			
-			-- Left CardWrapper
-			createInstance("Frame", {
-				Name = "LeftWrapper",
-				Position = UDim2.new(0, 0, 0, 0),
-				Size = UDim2.new(0, 347, 0, 314),
-				Parent = rowWrapper,
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-			
-			-- Right CardWrapper
-			createInstance("Frame", {
-				Name = "RightWrapper",
-				Position = UDim2.new(0, 362, 0, 0),
-				Size = UDim2.new(0, 347, 0, 314),
-				Parent = rowWrapper,
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-		end
-		
-		-- Determine which wrapper to use
-		local wrapper
+		-- Determine position based on side
+		local xPosition
 		if Card.Side == "Right" then
-			wrapper = rowWrapper:FindFirstChild("RightWrapper")
+			xPosition = UDim2.new(1, -347, 0, 0) -- Align right
 		else
-			wrapper = rowWrapper:FindFirstChild("LeftWrapper")
+			xPosition = UDim2.new(0, 0, 0, 0) -- Align left
 		end
 		
 		local cardFrame = createInstance("Frame", {
 			Name = name,
-			Size = UDim2.new(1, 0, 1, 0),
-			Parent = wrapper,
+			Position = xPosition,
+			Size = UDim2.new(0, 347, 0, 314),
+			Parent = cardWrapper,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
-			Visible = Library.CurrentTab == Tab,
 			ZIndex = 1
 		})
 		
@@ -1068,6 +1032,7 @@ function Library:CreateTab(name)
 		
 		Card.Frame = cardFrame
 		Card.Holder = mainHolder
+		Card.Wrapper = cardWrapper
 		
 		-- // Element Creation Methods
 		
@@ -1646,6 +1611,185 @@ function Library:CreateTab(name)
 				createTween(button, {Size = UDim2.new(0, 320, 0, 36)}, 0.1):Play()
 				callback()
 			end)
+		end
+		
+		function Card:AddKeybind(options)
+			local name = options.Name or "Keybind"
+			local default = options.Default or Enum.KeyCode.E
+			local callback = options.Callback or function() end
+			
+			local frame = createInstance("Frame", {
+				Name = "Keybind",
+				Size = UDim2.new(0, 320, 0, 36),
+				Parent = mainHolder,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			createInstance("TextLabel", {
+				Position = UDim2.new(0, 5, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(0, 200, 0, 36),
+				Parent = frame,
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamMedium,
+				Text = name,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			local keybindButton = createInstance("TextButton", {
+				Position = UDim2.new(1, -75, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(0, 70, 0, 26),
+				Parent = frame,
+				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+				Font = Enum.Font.Gotham,
+				Text = default.Name,
+				TextSize = 12,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			createInstance("UICorner", {
+				Parent = keybindButton,
+				CornerRadius = UDim.new(0, 5)
+			})
+			
+			createInstance("UIStroke", {
+				Parent = keybindButton,
+				Color = Color3.fromRGB(69, 94, 255),
+				Thickness = 1,
+				Transparency = 0.5
+			})
+			
+			local currentKey = default
+			local listening = false
+			
+			keybindButton.MouseButton1Click:Connect(function()
+				listening = true
+				keybindButton.Text = "..."
+				keybindButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
+			end)
+			
+			UserInputService.InputBegan:Connect(function(input, gameProcessed)
+				if listening then
+					if input.UserInputType == Enum.UserInputType.Keyboard then
+						currentKey = input.KeyCode
+						keybindButton.Text = currentKey.Name
+						keybindButton.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+						listening = false
+						callback(currentKey)
+					end
+				elseif not gameProcessed and input.KeyCode == currentKey then
+					callback(currentKey)
+				end
+			end)
+			
+			return {
+				Set = function(keyCode)
+					currentKey = keyCode
+					keybindButton.Text = keyCode.Name
+					callback(keyCode)
+				end,
+				Get = function()
+					return currentKey
+				end
+			}
+		end
+		
+		function Card:AddTextBox(options)
+			local name = options.Name or "TextBox"
+			local placeholder = options.Placeholder or "Enter text..."
+			local default = options.Default or ""
+			local callback = options.Callback or function() end
+			
+			local frame = createInstance("Frame", {
+				Name = "TextBox",
+				Size = UDim2.new(0, 320, 0, 55),
+				Parent = mainHolder,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			createInstance("TextLabel", {
+				Position = UDim2.new(0, 5, 0, 0),
+				Size = UDim2.new(0, 200, 0, 20),
+				Parent = frame,
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamMedium,
+				Text = name,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			local textBox = createInstance("TextBox", {
+				Position = UDim2.new(0, 5, 0, 25),
+				Size = UDim2.new(1, -10, 0, 26),
+				Parent = frame,
+				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+				Font = Enum.Font.Gotham,
+				PlaceholderText = placeholder,
+				Text = default,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
+				ClearTextOnFocus = false,
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			createInstance("UICorner", {
+				Parent = textBox,
+				CornerRadius = UDim.new(0, 5)
+			})
+			
+			createInstance("UIStroke", {
+				Parent = textBox,
+				Color = Color3.fromRGB(45, 45, 48),
+				Thickness = 1,
+				Transparency = 0.5
+			})
+			
+			createInstance("UIPadding", {
+				Parent = textBox,
+				PaddingLeft = UDim.new(0, 10),
+				PaddingRight = UDim.new(0, 10)
+			})
+			
+			textBox.FocusLost:Connect(function(enterPressed)
+				callback(textBox.Text)
+			end)
+			
+			textBox.Focused:Connect(function()
+				createTween(textBox, {BackgroundColor3 = Color3.fromRGB(35, 35, 38)}, 0.2):Play()
+			end)
+			
+			textBox:GetPropertyChangedSignal("Text"):Connect(function()
+				if textBox:IsFocused() then
+					createTween(textBox, {BackgroundColor3 = Color3.fromRGB(30, 30, 33)}, 0.1):Play()
+				end
+			end)
+			
+			return {
+				Set = function(text)
+					textBox.Text = text
+					callback(text)
+				end,
+				Get = function()
+					return textBox.Text
+				end
+			}
 		end
 		
 		table.insert(Tab.Cards, Card)
