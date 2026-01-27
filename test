@@ -1,4 +1,4 @@
--- // 2
+-- 22
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -257,18 +257,13 @@ local CloseButton = createInstance("TextButton", {
 	Position = UDim2.new(0.944, 0, 0.030, 0),
 	Size = UDim2.new(0, 30, 0, 30),
 	Parent = Background,
-	BackgroundColor3 = Color3.fromRGB(255, 50, 50),
-	Font = Enum.Font.GothamBold,
+	BackgroundTransparency = 1,
+	Font = Enum.Font.GothamMedium,
 	Text = "X",
 	TextSize = 16,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
 	BorderSizePixel = 0,
 	ZIndex = 10
-})
-
-createInstance("UICorner", {
-	Parent = CloseButton,
-	CornerRadius = UDim.new(0, 5)
 })
 
 CloseButton.MouseButton1Click:Connect(function()
@@ -361,7 +356,7 @@ local ColorviewBlackGradient = createInstance("UIGradient", {
 local ColorSelector = createInstance("TextButton", {
 	Name = "ColorSelector",
 	Position = UDim2.new(0.5, 0, 0.5, 0),
-	Size = UDim2.new(0, 10, 0, 10),
+	Size = UDim2.new(0, 18, 0, 18),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Parent = Colorview,
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
@@ -421,7 +416,7 @@ createInstance("UICorner", {
 	CornerRadius = UDim.new(0, 5)
 })
 
-local AlphaBar = createInstance("Frame", {
+local DarknessBar = createInstance("Frame", {
 	Name = "Bar2",
 	Position = UDim2.new(0.128, 0, 0.907, 0),
 	Size = UDim2.new(0, 212, 0, 14),
@@ -432,25 +427,21 @@ local AlphaBar = createInstance("Frame", {
 })
 
 createInstance("UICorner", {
-	Parent = AlphaBar,
+	Parent = DarknessBar,
 	CornerRadius = UDim.new(0, 5)
 })
 
-local AlphaGradient = createInstance("UIGradient", {
-	Parent = AlphaBar,
-	Color = ColorSequence.new(Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 0, 0)),
-	Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(1, 0)
-	})
+local DarknessGradient = createInstance("UIGradient", {
+	Parent = DarknessBar,
+	Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(0, 0, 0))
 })
 
-local AlphaDragger = createInstance("TextButton", {
-	Name = "AlphaDragger",
+local DarknessDragger = createInstance("TextButton", {
+	Name = "DarknessDragger",
 	Position = UDim2.new(1, 0, 0.5, 0),
 	Size = UDim2.new(0, 10, 0, 25),
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Parent = AlphaBar,
+	Parent = DarknessBar,
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	Text = '',
 	BorderSizePixel = 0,
@@ -458,7 +449,7 @@ local AlphaDragger = createInstance("TextButton", {
 })
 
 createInstance("UICorner", {
-	Parent = AlphaDragger,
+	Parent = DarknessDragger,
 	CornerRadius = UDim.new(0, 5)
 })
 
@@ -466,7 +457,7 @@ createInstance("UICorner", {
 local currentHue = 0
 local currentSat = 1
 local currentVal = 1
-local currentAlpha = 1
+local currentDarkness = 0
 local currentCallback = nil
 
 local function updateColorFromHSV()
@@ -493,20 +484,26 @@ local function updateColorFromHSV()
 		r, g, b = c, 0, x
 	end
 	
-	local color = Color3.new(r + m, g + m, b + m)
+	-- Apply darkness
+	local darkFactor = 1 - currentDarkness
+	local color = Color3.new((r + m) * darkFactor, (g + m) * darkFactor, (b + m) * darkFactor)
 	
 	if currentCallback then
 		currentCallback(color)
 	end
 	
-	AlphaGradient.Color = ColorSequence.new(color, color)
+	-- Update the darkness bar gradient to match current hue/sat
+	local baseColor = Color3.new(r + m, g + m, b + m)
+	DarknessGradient.Color = ColorSequence.new(baseColor, Color3.fromRGB(0, 0, 0))
 	
 	return color
 end
 
 local draggingColor = false
-ColorSelector.MouseButton1Down:Connect(function()
-	draggingColor = true
+ColorSelector.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingColor = true
+	end
 end)
 
 local draggingHue = false
@@ -514,10 +511,16 @@ HueDragger.MouseButton1Down:Connect(function()
 	draggingHue = true
 end)
 
+local draggingDarkness = false
+DarknessDragger.MouseButton1Down:Connect(function()
+	draggingDarkness = true
+end)
+
 UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		draggingColor = false
 		draggingHue = false
+		draggingDarkness = false
 	end
 end)
 
@@ -544,6 +547,16 @@ UserInputService.InputChanged:Connect(function(input)
 			
 			local hueColor = Color3.fromHSV(relativePos, 1, 1)
 			Colorview.BackgroundColor3 = hueColor
+			
+			updateColorFromHSV()
+		end
+		
+		if draggingDarkness then
+			local mousePos = UserInputService:GetMouseLocation()
+			local relativePos = math.clamp((mousePos.X - DarknessBar.AbsolutePosition.X) / DarknessBar.AbsoluteSize.X, 0, 1)
+			
+			currentDarkness = relativePos
+			DarknessDragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
 			
 			updateColorFromHSV()
 		end
@@ -794,40 +807,25 @@ function Library:CreateTab(name)
 		CornerRadius = UDim.new(0, 3)
 	})
 	
-	-- Create tab content container
-	local tabContainer = createInstance("Frame", {
-		Name = name .. "Container",
-		Size = UDim2.new(1, 0, 1, 0),
-		Parent = Scroll,
-		BackgroundTransparency = 1,
-		Visible = false,
-		BorderSizePixel = 0
-	})
-	
-	local tabLayout = createInstance("UIListLayout", {
-		Parent = tabContainer,
-		Padding = UDim.new(0, 15),
-		FillDirection = Enum.FillDirection.Vertical,
-		HorizontalAlignment = Enum.HorizontalAlignment.Left,
-		VerticalAlignment = Enum.VerticalAlignment.Top,
-		SortOrder = Enum.SortOrder.LayoutOrder
-	})
-	
-	tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		Scroll.CanvasSize = UDim2.new(0, 0, 0, tabLayout.AbsoluteContentSize.Y + 30)
-	end)
-	
-	Tab.Container = tabContainer
+	-- Create tab content container (directly in Scroll, not a separate frame)
+	Tab.Container = Scroll
 	Tab.Button = tabButton
 	
 	-- Tab switching
 	tabButton.MouseButton1Click:Connect(function()
 		for _, otherTab in pairs(Library.Tabs) do
-			otherTab.Container.Visible = false
+			-- Hide all cards from other tabs
+			for _, card in pairs(otherTab.Cards) do
+				card.Frame.Visible = false
+			end
 			otherTab.Button.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 		end
 		
-		tabContainer.Visible = true
+		-- Show cards from this tab
+		for _, card in pairs(Tab.Cards) do
+			card.Frame.Visible = true
+		end
+		
 		tabButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
 		Library.CurrentTab = Tab
 	end)
@@ -847,7 +845,6 @@ function Library:CreateTab(name)
 	
 	-- If first tab, make it active
 	if #Library.Tabs == 0 then
-		tabContainer.Visible = true
 		tabButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
 		Library.CurrentTab = Tab
 	end
@@ -865,10 +862,11 @@ function Library:CreateTab(name)
 		local cardFrame = createInstance("Frame", {
 			Name = name,
 			Size = UDim2.new(0, 347, 0, 314),
-			Parent = tabContainer,
+			Parent = Scroll,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
 			LayoutOrder = Card.LayoutOrder,
+			Visible = Library.CurrentTab == Tab,
 			ZIndex = 1
 		})
 		
@@ -1463,9 +1461,11 @@ function Library:CreateTab(name)
 				currentHue = h * 360
 				currentSat = s
 				currentVal = v
+				currentDarkness = 0
 				
 				HueDragger.Position = UDim2.new(h, 0, 0.5, 0)
 				ColorSelector.Position = UDim2.new(s, 0, 1 - v, 0)
+				DarknessDragger.Position = UDim2.new(0, 0, 0.5, 0)
 				
 				local hueColor = Color3.fromHSV(h, 1, 1)
 				Colorview.BackgroundColor3 = hueColor
