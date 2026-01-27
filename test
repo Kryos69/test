@@ -1,12 +1,10 @@
--- //323
+-- // N4324324
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-
--- // Utility Functions
 
 function createInstance(className, properties)
 	local instance = Instance.new(className)
@@ -71,16 +69,14 @@ local Library = {}
 Library.Tabs = {}
 Library.CurrentTab = nil
 Library.NotificationPosition = "BottomRight" -- Default notification position
-Library.HideInfo = false -- Hide player info (icon and username)
-Library.ToggleKey = Enum.KeyCode.RightShift -- Default toggle key
-
--- // Initialize GUI
+Library.HideInfo = false
+Library.ToggleKey = Enum.KeyCode.RightShift
 
 local Neptune = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 Neptune.Name = "Neptune"
 Neptune.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Neptune.ResetOnSpawn = false
-Neptune.IgnoreGuiInset = true -- Mobile support
+Neptune.IgnoreGuiInset = true
 
 local Holder = createInstance("Frame", {
 	Name = "Holder",
@@ -93,13 +89,11 @@ local Holder = createInstance("Frame", {
 	ZIndex = 1
 })
 
--- Mobile support scaling
 local UIScale = createInstance("UIScale", {
 	Parent = Holder,
 	Scale = 1
 })
 
--- Adjust scale based on screen size
 local function updateScale()
 	local viewportSize = workspace.CurrentCamera.ViewportSize
 	local baseWidth = 1920
@@ -208,7 +202,6 @@ ScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	Scroll.CanvasSize = UDim2.new(0, 0, 0, ScrollLayout.AbsoluteContentSize.Y + 30)
 end)
 
--- Player Info
 local PlayerHolder = createInstance("ImageLabel", {
 	Name = "PlayerHolder",
 	Position = UDim2.new(0, 0, 0.880, 0),
@@ -235,12 +228,9 @@ local userId = LocalPlayer.UserId
 local thumbType = Enum.ThumbnailType.HeadShot
 local thumbSize = Enum.ThumbnailSize.Size48x48
 
--- Function to update player info visibility
 local function updatePlayerInfo()
 	if Library.HideInfo then
-		-- Set random placeholder icon
 		PlayerIcon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-		-- Add blur effect
 		if not PlayerIcon:FindFirstChild("Blur") then
 			local blur = Instance.new("ImageLabel")
 			blur.Name = "Blur"
@@ -256,12 +246,10 @@ local function updatePlayerInfo()
 			blurCorner.Parent = blur
 		end
 	else
-		-- Show real player icon
 		pcall(function()
 			local content = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
 			PlayerIcon.Image = content
 		end)
-		-- Remove blur
 		if PlayerIcon:FindFirstChild("Blur") then
 			PlayerIcon.Blur:Destroy()
 		end
@@ -290,12 +278,24 @@ local UsernameLabel = createInstance("TextLabel", {
 	ZIndex = 4
 })
 
--- Function to toggle hide info
 function Library:SetHideInfo(value)
 	self.HideInfo = value
 	UsernameLabel.Text = value and "*****" or LocalPlayer.Name
 	updatePlayerInfo()
 end
+
+-- // API Hook for expiration (commented out)
+-- local function getExpirationFromAPI()
+--     local success, result = pcall(function()
+--         return game:HttpGet("YOUR_API_URL_HERE")
+--     end)
+--     if success then
+--         return result -- Expected format: "5M 5D 15H 15S"
+--     end
+--     return "5M 5D 15H 15S"
+-- end
+
+local expirationTime = "5M 5D 15H 15S" -- getExpirationFromAPI()
 
 createInstance("TextLabel", {
 	Name = "Expire",
@@ -304,7 +304,7 @@ createInstance("TextLabel", {
 	Parent = PlayerHolder,
 	BackgroundTransparency = 1,
 	Font = Enum.Font.Gotham,
-	Text = 'Premium User',
+	Text = 'Expires: ' .. expirationTime,
 	TextSize = 10,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextColor3 = Color3.fromRGB(94, 94, 94),
@@ -312,9 +312,8 @@ createInstance("TextLabel", {
 	ZIndex = 4
 })
 
--- Close Button
 local CloseButton = createInstance("TextButton", {
-	Position = UDim2.new(0.944, 0, 0.030, 0),
+	Position = UDim2.new(0.945, 0, 0.025, 0),
 	Size = UDim2.new(0, 35, 0, 35),
 	Parent = Background,
 	BackgroundTransparency = 1,
@@ -342,8 +341,6 @@ function Library:SetToggleKey(keyCode)
 	self.ToggleKey = keyCode
 end
 
--- // Color Picker System
-
 local ColorPickerFrame = createInstance("Frame", {
 	Name = "BackgroundColorP",
 	Position = UDim2.new(1.073, 0, 0.038, 0),
@@ -360,7 +357,6 @@ createInstance("UICorner", {
 	CornerRadius = UDim.new(0, 5)
 })
 
--- Make color picker draggable
 makeDraggable(ColorPickerFrame)
 
 local Colorview = createInstance("Frame", {
@@ -525,7 +521,6 @@ createInstance("UICorner", {
 	CornerRadius = UDim.new(0, 5)
 })
 
--- Color Picker Logic
 local currentHue = 0
 local currentSat = 1
 local currentVal = 1
@@ -556,7 +551,6 @@ local function updateColorFromHSV()
 		r, g, b = c, 0, x
 	end
 	
-	-- Apply darkness
 	local darkFactor = 1 - currentDarkness
 	local color = Color3.new((r + m) * darkFactor, (g + m) * darkFactor, (b + m) * darkFactor)
 	
@@ -564,7 +558,6 @@ local function updateColorFromHSV()
 		currentCallback(color)
 	end
 	
-	-- Update the darkness bar gradient to match current hue/sat
 	local baseColor = Color3.new(r + m, g + m, b + m)
 	DarknessGradient.Color = ColorSequence.new(baseColor, Color3.fromRGB(0, 0, 0))
 	
@@ -635,8 +628,6 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- // Notification System
--- // Notification Position Setter
 function Library:SetNotificationPosition(position)
 	-- "TopLeft", "TopRight", "BottomLeft", "BottomRight"
 	local validPositions = {
@@ -655,10 +646,8 @@ function Library:SetNotificationPosition(position)
 	end
 end
 
--- Track active notifications for stacking
 local activeNotifications = {}
 
--- // Notification System
 function Library:Notify(options)
 	local notifType = options.Type or "Notification" -- "Error", "Success", "Warning", "Notification"
 	local title = options.Title or "Notification"
@@ -680,7 +669,6 @@ function Library:Notify(options)
 		Notification = Color3.fromRGB(69, 94, 255)
 	}
 	
-	-- Position settings
 	local positions = {
 		TopLeft = {start = UDim2.new(-0.2, 0, 0, 0), target = UDim2.new(0.01, 0, 0.05, 0), direction = 1},
 		TopRight = {start = UDim2.new(1.2, 0, 0, 0), target = UDim2.new(0.85, 0, 0.05, 0), direction = 1},
@@ -690,7 +678,6 @@ function Library:Notify(options)
 	
 	local pos = positions[position] or positions.BottomRight
 	
-	-- Calculate offset for stacking
 	if not activeNotifications[position] then
 		activeNotifications[position] = {}
 	end
@@ -798,7 +785,6 @@ function Library:Notify(options)
 		CornerRadius = UDim.new(1, 0)
 	})
 	
-	-- Calculate target position with offset for stacking
 	local targetPos = UDim2.new(
 		pos.target.X.Scale,
 		pos.target.X.Offset,
@@ -806,7 +792,6 @@ function Library:Notify(options)
 		pos.target.Y.Offset + offset
 	)
 	
-	-- Animate in with smooth easing
 	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 	local slideIn = TweenService:Create(notif, tweenInfo, {Position = targetPos})
 	slideIn:Play()
@@ -819,13 +804,11 @@ function Library:Notify(options)
 		
 		task.wait(duration)
 		
-		-- Slide out with smooth easing
 		local slideOut = TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = pos.start})
 		slideOut:Play()
 		
 		task.wait(0.4)
 		
-		-- Remove from active notifications
 		for i, v in ipairs(activeNotifications[position]) do
 			if v == notif then
 				table.remove(activeNotifications[position], i)
@@ -835,7 +818,6 @@ function Library:Notify(options)
 		
 		notif:Destroy()
 		
-		-- Reposition remaining notifications
 		local currentOffset = 0
 		for _, remainingNotif in ipairs(activeNotifications[position]) do
 			if remainingNotif and remainingNotif.Parent then
@@ -852,14 +834,11 @@ function Library:Notify(options)
 	end)
 end
 
--- // Tab System
-
 function Library:CreateTab(name)
 	local Tab = {}
 	Tab.Name = name
 	Tab.Cards = {}
 	
-	-- Create tab button
 	local tabButton = createInstance("TextButton", {
 		Name = "TabButton",
 		Size = UDim2.new(0, 160, 0, 45),
@@ -879,11 +858,9 @@ function Library:CreateTab(name)
 		CornerRadius = UDim.new(0, 3)
 	})
 	
-	-- Create tab content container (directly in Scroll, not a separate frame)
 	Tab.Container = Scroll
 	Tab.Button = tabButton
 	
-	-- Tab switching
 	tabButton.MouseButton1Click:Connect(function()
 		for _, otherTab in pairs(Library.Tabs) do
 			-- Hide all card wrappers from other tabs
@@ -906,7 +883,6 @@ function Library:CreateTab(name)
 		Library.CurrentTab = Tab
 	end)
 	
-	-- Hover effects
 	tabButton.MouseEnter:Connect(function()
 		if Library.CurrentTab ~= Tab then
 			createTween(tabButton, {BackgroundColor3 = Color3.fromRGB(35, 35, 38)}, 0.2):Play()
@@ -919,7 +895,6 @@ function Library:CreateTab(name)
 		end
 	end)
 	
-	-- If first tab, make it active
 	if #Library.Tabs == 0 then
 		tabButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
 		Library.CurrentTab = Tab
@@ -927,14 +902,12 @@ function Library:CreateTab(name)
 	
 	table.insert(Library.Tabs, Tab)
 	
-	-- // Card Creation
-	
 	function Tab:CreateCard(name, side)
 		local Card = {}
 		Card.Name = name
 		Card.Elements = {}
 		Card.LayoutOrder = #Tab.Cards + 1
-		Card.Side = side or "Left" -- Default to Left
+		Card.Side = side or "Left"
 		
 		-- Create CardWrapper (full width container)
 		local cardWrapper = createInstance("Frame", {
@@ -948,12 +921,11 @@ function Library:CreateTab(name)
 			ZIndex = 1
 		})
 		
-		-- Determine position based on side
 		local xPosition
 		if Card.Side == "Right" then
-			xPosition = UDim2.new(1, -347, 0, 0) -- Align right
+			xPosition = UDim2.new(1, -347, 0, 0)
 		else
-			xPosition = UDim2.new(0, 0, 0, 0) -- Align left
+			xPosition = UDim2.new(0, 0, 0, 0)
 		end
 		
 		local cardFrame = createInstance("Frame", {
@@ -1033,8 +1005,6 @@ function Library:CreateTab(name)
 		Card.Frame = cardFrame
 		Card.Holder = mainHolder
 		Card.Wrapper = cardWrapper
-		
-		-- // Element Creation Methods
 		
 		function Card:AddToggle(options)
 			local name = options.Name or "Toggle"
@@ -1290,6 +1260,7 @@ function Library:CreateTab(name)
 				Parent = button,
 				BackgroundTransparency = 1,
 				Image = "rbxassetid://134116754541554",
+				Rotation = 180,
 				ZIndex = 51
 			})
 			
@@ -1364,7 +1335,7 @@ function Library:CreateTab(name)
 					button.Text = option
 					dropContent.Visible = false
 					createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
-					createTween(arrow, {Rotation = 0}, 0.3):Play()
+					createTween(arrow, {Rotation = 180}, 0.3):Play()
 					callback(option)
 				end)
 			end
@@ -1395,9 +1366,8 @@ function Library:CreateTab(name)
 					dropContent.Visible = true
 					local contentHeight = (#list * 32) + 16
 					createTween(dropContent, {Size = UDim2.new(0, 320, 0, contentHeight)}, 0.3):Play()
-					createTween(arrow, {Rotation = 180}, 0.3):Play()
+					createTween(arrow, {Rotation = 0}, 0.3):Play()
 					
-					-- Continuously update position while open
 					if updateConnection then
 						updateConnection:Disconnect()
 					end
@@ -1411,13 +1381,12 @@ function Library:CreateTab(name)
 						updateConnection:Disconnect()
 					end
 					createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
-					createTween(arrow, {Rotation = 0}, 0.3):Play()
+					createTween(arrow, {Rotation = 180}, 0.3):Play()
 					task.wait(0.3)
 					dropContent.Visible = false
 				end
 			end)
 			
-			-- Close dropdown when clicking outside
 			UserInputService.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
 					if isOpen then
@@ -1439,7 +1408,7 @@ function Library:CreateTab(name)
 								updateConnection:Disconnect()
 							end
 							createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
-							createTween(arrow, {Rotation = 0}, 0.3):Play()
+							createTween(arrow, {Rotation = 180}, 0.3):Play()
 							task.wait(0.3)
 							dropContent.Visible = false
 						end
@@ -1492,7 +1461,7 @@ function Library:CreateTab(name)
 							button.Text = option
 							dropContent.Visible = false
 							createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
-							createTween(arrow, {Rotation = 0}, 0.3):Play()
+							createTween(arrow, {Rotation = 180}, 0.3):Play()
 							callback(option)
 						end)
 					end
@@ -1769,16 +1738,6 @@ function Library:CreateTab(name)
 			
 			textBox.FocusLost:Connect(function(enterPressed)
 				callback(textBox.Text)
-			end)
-			
-			textBox.Focused:Connect(function()
-				createTween(textBox, {BackgroundColor3 = Color3.fromRGB(35, 35, 38)}, 0.2):Play()
-			end)
-			
-			textBox:GetPropertyChangedSignal("Text"):Connect(function()
-				if textBox:IsFocused() then
-					createTween(textBox, {BackgroundColor3 = Color3.fromRGB(30, 30, 33)}, 0.1):Play()
-				end
 			end)
 			
 			return {
