@@ -1,4 +1,4 @@
--- 22
+-- HFUIEVHJSADVBHJDAS
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -71,6 +71,7 @@ local Library = {}
 Library.Tabs = {}
 Library.CurrentTab = nil
 Library.NotificationPosition = "BottomRight" -- Default notification position
+Library.HideInfo = false -- Hide player info (icon and username)
 
 -- // Initialize GUI
 
@@ -78,6 +79,7 @@ local Neptune = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 Neptune.Name = "Neptune"
 Neptune.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Neptune.ResetOnSpawn = false
+Neptune.IgnoreGuiInset = true -- Mobile support
 
 local Holder = createInstance("Frame", {
 	Name = "Holder",
@@ -89,6 +91,26 @@ local Holder = createInstance("Frame", {
 	BorderSizePixel = 0,
 	ZIndex = 1
 })
+
+-- Mobile support scaling
+local UIScale = createInstance("UIScale", {
+	Parent = Holder,
+	Scale = 1
+})
+
+-- Adjust scale based on screen size
+local function updateScale()
+	local viewportSize = workspace.CurrentCamera.ViewportSize
+	local baseWidth = 1920
+	local baseHeight = 1080
+	local scaleX = viewportSize.X / baseWidth
+	local scaleY = viewportSize.Y / baseHeight
+	local scale = math.min(scaleX, scaleY, 1)
+	UIScale.Scale = math.max(scale, 0.5) -- Minimum scale of 0.5
+end
+
+updateScale()
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
 
 local Background = createInstance("ImageLabel", {
 	Name = "Background",
@@ -172,11 +194,10 @@ createInstance("UIPadding", {
 	PaddingRight = UDim.new(0, 15)
 })
 
-local ScrollLayout = createInstance("UIGridLayout", {
+local ScrollLayout = createInstance("UIListLayout", {
 	Parent = Scroll,
-	CellPadding = UDim2.new(0, 15, 0, 15),
-	CellSize = UDim2.new(0, 347, 0, 314),
-	FillDirection = Enum.FillDirection.Horizontal,
+	Padding = UDim.new(0, 15),
+	FillDirection = Enum.FillDirection.Vertical,
 	HorizontalAlignment = Enum.HorizontalAlignment.Left,
 	VerticalAlignment = Enum.VerticalAlignment.Top,
 	SortOrder = Enum.SortOrder.LayoutOrder
@@ -212,30 +233,68 @@ local PlayerIcon = createInstance("ImageLabel", {
 local userId = LocalPlayer.UserId
 local thumbType = Enum.ThumbnailType.HeadShot
 local thumbSize = Enum.ThumbnailSize.Size48x48
-pcall(function()
-	local content = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
-	PlayerIcon.Image = content
-end)
+
+-- Function to update player info visibility
+local function updatePlayerInfo()
+	if Library.HideInfo then
+		-- Set random placeholder icon
+		PlayerIcon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+		-- Add blur effect
+		if not PlayerIcon:FindFirstChild("Blur") then
+			local blur = Instance.new("ImageLabel")
+			blur.Name = "Blur"
+			blur.Size = UDim2.new(1, 0, 1, 0)
+			blur.BackgroundTransparency = 1
+			blur.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+			blur.ImageTransparency = 0.3
+			blur.ZIndex = 5
+			blur.Parent = PlayerIcon
+			
+			local blurCorner = Instance.new("UICorner")
+			blurCorner.CornerRadius = UDim.new(1, 0)
+			blurCorner.Parent = blur
+		end
+	else
+		-- Show real player icon
+		pcall(function()
+			local content = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+			PlayerIcon.Image = content
+		end)
+		-- Remove blur
+		if PlayerIcon:FindFirstChild("Blur") then
+			PlayerIcon.Blur:Destroy()
+		end
+	end
+end
+
+updatePlayerInfo()
 
 createInstance("UICorner", {
 	Parent = PlayerIcon,
 	CornerRadius = UDim.new(1, 0)
 })
 
-createInstance("TextLabel", {
+local UsernameLabel = createInstance("TextLabel", {
 	Name = "Username",
 	Position = UDim2.new(0.343, 0, 0.167, 0),
 	Size = UDim2.new(0, 111, 0, 36),
 	Parent = PlayerHolder,
 	BackgroundTransparency = 1,
 	Font = Enum.Font.GothamMedium,
-	Text = LocalPlayer.Name,
+	Text = Library.HideInfo and "*****" or LocalPlayer.Name,
 	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
 	BorderSizePixel = 0,
 	ZIndex = 4
 })
+
+-- Function to toggle hide info
+function Library:SetHideInfo(value)
+	self.HideInfo = value
+	UsernameLabel.Text = value and "*****" or LocalPlayer.Name
+	updatePlayerInfo()
+end
 
 createInstance("TextLabel", {
 	Name = "Expire",
@@ -255,12 +314,12 @@ createInstance("TextLabel", {
 -- Close Button
 local CloseButton = createInstance("TextButton", {
 	Position = UDim2.new(0.944, 0, 0.030, 0),
-	Size = UDim2.new(0, 30, 0, 30),
+	Size = UDim2.new(0, 35, 0, 35),
 	Parent = Background,
 	BackgroundTransparency = 1,
-	Font = Enum.Font.GothamMedium,
+	Font = Enum.Font.GothamBold,
 	Text = "X",
-	TextSize = 16,
+	TextSize = 20,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
 	BorderSizePixel = 0,
 	ZIndex = 10
@@ -790,11 +849,11 @@ function Library:CreateTab(name)
 	-- Create tab button
 	local tabButton = createInstance("TextButton", {
 		Name = "TabButton",
-		Size = UDim2.new(0, 133, 0, 38),
+		Size = UDim2.new(0, 160, 0, 45),
 		Parent = TabHolder,
 		Font = Enum.Font.GothamMedium,
 		Text = name,
-		TextSize = 15,
+		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundColor3 = Color3.fromRGB(25, 25, 28),
@@ -826,6 +885,24 @@ function Library:CreateTab(name)
 			card.Frame.Visible = true
 		end
 		
+		-- Show/hide rows based on visibility
+		for _, row in pairs(Scroll:GetChildren()) do
+			if row:IsA("Frame") and row.Name:match("Row") then
+				local hasVisibleCard = false
+				for _, wrapper in pairs(row:GetChildren()) do
+					if wrapper:IsA("Frame") then
+						for _, cardFrame in pairs(wrapper:GetChildren()) do
+							if cardFrame:IsA("Frame") and cardFrame.Visible then
+								hasVisibleCard = true
+								break
+							end
+						end
+					end
+				end
+				row.Visible = hasVisibleCard
+			end
+		end
+		
 		tabButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
 		Library.CurrentTab = Tab
 	end)
@@ -853,19 +930,74 @@ function Library:CreateTab(name)
 	
 	-- // Card Creation
 	
-	function Tab:CreateCard(name)
+	function Tab:CreateCard(name, side)
 		local Card = {}
 		Card.Name = name
 		Card.Elements = {}
 		Card.LayoutOrder = #Tab.Cards + 1
+		Card.Side = side or "Left" -- Default to Left
+		
+		-- Find or create the appropriate row wrapper
+		local rowWrapper
+		local rowIndex = math.ceil(Card.LayoutOrder / 2)
+		
+		-- Look for existing row
+		for _, child in pairs(Scroll:GetChildren()) do
+			if child.Name == "Row" .. rowIndex and child:IsA("Frame") then
+				rowWrapper = child
+				break
+			end
+		end
+		
+		-- Create new row if doesn't exist
+		if not rowWrapper then
+			rowWrapper = createInstance("Frame", {
+				Name = "Row" .. rowIndex,
+				Size = UDim2.new(1, 0, 0, 329),
+				Parent = Scroll,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				LayoutOrder = rowIndex,
+				ZIndex = 1
+			})
+			
+			-- Left CardWrapper
+			createInstance("Frame", {
+				Name = "LeftWrapper",
+				Position = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 347, 0, 314),
+				Parent = rowWrapper,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+			
+			-- Right CardWrapper
+			createInstance("Frame", {
+				Name = "RightWrapper",
+				Position = UDim2.new(0, 362, 0, 0),
+				Size = UDim2.new(0, 347, 0, 314),
+				Parent = rowWrapper,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ZIndex = 1
+			})
+		end
+		
+		-- Determine which wrapper to use
+		local wrapper
+		if Card.Side == "Right" then
+			wrapper = rowWrapper:FindFirstChild("RightWrapper")
+		else
+			wrapper = rowWrapper:FindFirstChild("LeftWrapper")
+		end
 		
 		local cardFrame = createInstance("Frame", {
 			Name = name,
-			Size = UDim2.new(0, 347, 0, 314),
-			Parent = Scroll,
+			Size = UDim2.new(1, 0, 1, 0),
+			Parent = wrapper,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
-			LayoutOrder = Card.LayoutOrder,
 			Visible = Library.CurrentTab == Tab,
 			ZIndex = 1
 		})
@@ -1081,7 +1213,7 @@ function Library:CreateTab(name)
 			
 			local dragger = createInstance("TextButton", {
 				Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0),
-				Size = UDim2.new(0, 16, 0, 16),
+				Size = UDim2.new(0, 10, 0, 22),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Parent = holderBar,
 				Text = '',
@@ -1092,7 +1224,7 @@ function Library:CreateTab(name)
 			
 			createInstance("UICorner", {
 				Parent = dragger,
-				CornerRadius = UDim.new(1, 0)
+				CornerRadius = UDim.new(0, 5)
 			})
 			
 			local currentValue = default
