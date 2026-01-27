@@ -1,5 +1,4 @@
--- // N4324324
--- // Created by vFishy / xn90ubwbzuqegtn \\ --
+
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -312,15 +311,13 @@ createInstance("TextLabel", {
 	ZIndex = 4
 })
 
-local CloseButton = createInstance("TextButton", {
+local CloseButton = createInstance("ImageButton", {
 	Position = UDim2.new(0.945, 0, 0.025, 0),
 	Size = UDim2.new(0, 35, 0, 35),
 	Parent = Background,
 	BackgroundTransparency = 1,
-	Font = Enum.Font.GothamBold,
-	Text = "X",
-	TextSize = 20,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
+	Image = "rbxassetid://90578957355678",
+	ImageColor3 = Color3.fromRGB(255, 255, 255),
 	BorderSizePixel = 0,
 	ZIndex = 10
 })
@@ -909,10 +906,9 @@ function Library:CreateTab(name)
 		Card.LayoutOrder = #Tab.Cards + 1
 		Card.Side = side or "Left"
 		
-		-- Create CardWrapper (full width container)
 		local cardWrapper = createInstance("Frame", {
 			Name = "CardWrapper_" .. Card.LayoutOrder,
-			Size = UDim2.new(1, 0, 0, 329),
+			Size = UDim2.new(1, -30, 0, 329),
 			Parent = Scroll,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -921,17 +917,11 @@ function Library:CreateTab(name)
 			ZIndex = 1
 		})
 		
-		local xPosition
-		if Card.Side == "Right" then
-			xPosition = UDim2.new(1, -347, 0, 0)
-		else
-			xPosition = UDim2.new(0, 0, 0, 0)
-		end
-		
 		local cardFrame = createInstance("Frame", {
 			Name = name,
-			Position = xPosition,
 			Size = UDim2.new(0, 347, 0, 314),
+			AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
+			Position = Card.Side == "Right" and UDim2.new(1, 0, 0, 0) or UDim2.new(0, 0, 0, 0),
 			Parent = cardWrapper,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
@@ -1342,21 +1332,24 @@ function Library:CreateTab(name)
 			
 			local isOpen = false
 			
-			-- Update dropdown position when button is clicked or scrolled
 			local function updateDropdownPosition()
 				local buttonPos = frame.AbsolutePosition
 				local buttonSize = frame.AbsoluteSize
-				dropContent.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+				local holderPos = Holder.AbsolutePosition
+				local scale = Holder:FindFirstChildOfClass("UIScale") and Holder:FindFirstChildOfClass("UIScale").Scale or 1
+				
+				local relativeX = buttonPos.X - holderPos.X
+				local relativeY = (buttonPos.Y - holderPos.Y) + buttonSize.Y + 5
+				
+				dropContent.Position = UDim2.new(0, relativeX / scale, 0, relativeY / scale)
 			end
 			
-			-- Update position when scrolling
 			mainHolder:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
 				if isOpen then
 					updateDropdownPosition()
 				end
 			end)
 			
-			-- Update position on window resize or movement
 			local updateConnection
 			
 			button.MouseButton1Click:Connect(function()
