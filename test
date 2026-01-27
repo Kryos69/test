@@ -1127,14 +1127,16 @@ function Library:CreateTab(name)
 				ZIndex = 51
 			})
 			
+			-- Create dropdown content outside the card, attached to Neptune
 			local dropContent = createInstance("Frame", {
-				Position = UDim2.new(0, 0, 1, 5),
-				Size = UDim2.new(1, 0, 0, 0),
-				Parent = frame,
+				Position = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 320, 0, 0),
+				Parent = Neptune,
 				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
 				ClipsDescendants = true,
 				BorderSizePixel = 0,
-				ZIndex = 100
+				Visible = false,
+				ZIndex = 200
 			})
 			
 			createInstance("UICorner", {
@@ -1176,7 +1178,7 @@ function Library:CreateTab(name)
 					TextXAlignment = Enum.TextXAlignment.Center,
 					TextColor3 = Color3.fromRGB(255, 255, 255),
 					BorderSizePixel = 0,
-					ZIndex = 101
+					ZIndex = 201
 				})
 				
 				createInstance("UICorner", {
@@ -1194,22 +1196,62 @@ function Library:CreateTab(name)
 				
 				optionBtn.MouseButton1Click:Connect(function()
 					button.Text = option
-					createTween(dropContent, {Size = UDim2.new(1, 0, 0, 0)}, 0.3):Play()
+					dropContent.Visible = false
+					createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
 					createTween(arrow, {Rotation = 0}, 0.3):Play()
 					callback(option)
 				end)
 			end
 			
 			local isOpen = false
+			
+			-- Update dropdown position when button is clicked
+			local function updateDropdownPosition()
+				local buttonPos = frame.AbsolutePosition
+				local buttonSize = frame.AbsoluteSize
+				dropContent.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
+			end
+			
 			button.MouseButton1Click:Connect(function()
 				isOpen = not isOpen
 				if isOpen then
+					updateDropdownPosition()
+					dropContent.Visible = true
 					local contentHeight = (#list * 32) + 16
-					createTween(dropContent, {Size = UDim2.new(1, 0, 0, contentHeight)}, 0.3):Play()
+					createTween(dropContent, {Size = UDim2.new(0, 320, 0, contentHeight)}, 0.3):Play()
 					createTween(arrow, {Rotation = 180}, 0.3):Play()
 				else
-					createTween(dropContent, {Size = UDim2.new(1, 0, 0, 0)}, 0.3):Play()
+					createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
 					createTween(arrow, {Rotation = 0}, 0.3):Play()
+					task.wait(0.3)
+					dropContent.Visible = false
+				end
+			end)
+			
+			-- Close dropdown when clicking outside
+			UserInputService.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 then
+					if isOpen then
+						local mousePos = UserInputService:GetMouseLocation()
+						local dropPos = dropContent.AbsolutePosition
+						local dropSize = dropContent.AbsoluteSize
+						local buttonPos = frame.AbsolutePosition
+						local buttonSize = frame.AbsoluteSize
+						
+						local inDropdown = mousePos.X >= dropPos.X and mousePos.X <= dropPos.X + dropSize.X and
+						                   mousePos.Y >= dropPos.Y and mousePos.Y <= dropPos.Y + dropSize.Y
+						
+						local inButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+						                 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+						
+						if not inDropdown and not inButton then
+							isOpen = false
+							createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
+							createTween(arrow, {Rotation = 0}, 0.3):Play()
+							task.wait(0.3)
+							dropContent.Visible = false
+						end
+					end
 				end
 			end)
 			
@@ -1225,6 +1267,8 @@ function Library:CreateTab(name)
 						end
 					end
 					
+					list = newList
+					
 					for _, option in ipairs(newList) do
 						local optionBtn = createInstance("TextButton", {
 							Size = UDim2.new(1, -16, 0, 28),
@@ -1236,7 +1280,7 @@ function Library:CreateTab(name)
 							TextXAlignment = Enum.TextXAlignment.Center,
 							TextColor3 = Color3.fromRGB(255, 255, 255),
 							BorderSizePixel = 0,
-							ZIndex = 101
+							ZIndex = 201
 						})
 						
 						createInstance("UICorner", {
@@ -1254,7 +1298,8 @@ function Library:CreateTab(name)
 						
 						optionBtn.MouseButton1Click:Connect(function()
 							button.Text = option
-							createTween(dropContent, {Size = UDim2.new(1, 0, 0, 0)}, 0.3):Play()
+							dropContent.Visible = false
+							createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
 							createTween(arrow, {Rotation = 0}, 0.3):Play()
 							callback(option)
 						end)
