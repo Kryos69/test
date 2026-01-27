@@ -1,4 +1,4 @@
--- // 22
+-- // 2
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -293,6 +293,9 @@ createInstance("UICorner", {
 	CornerRadius = UDim.new(0, 5)
 })
 
+-- Make color picker draggable
+makeDraggable(ColorPickerFrame)
+
 local Colorview = createInstance("Frame", {
 	Name = "Colorview",
 	Position = UDim2.new(0.077, 0, 0.082, 0),
@@ -506,43 +509,44 @@ ColorSelector.MouseButton1Down:Connect(function()
 	draggingColor = true
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingColor = false
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if draggingColor and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local mousePos = UserInputService:GetMouseLocation()
-		local relativeX = math.clamp((mousePos.X - Colorview.AbsolutePosition.X) / Colorview.AbsoluteSize.X, 0, 1)
-		local relativeY = math.clamp((mousePos.Y - Colorview.AbsolutePosition.Y) / Colorview.AbsoluteSize.Y, 0, 1)
-		
-		currentSat = relativeX
-		currentVal = 1 - relativeY
-		
-		ColorSelector.Position = UDim2.new(relativeX, 0, relativeY, 0)
-		updateColorFromHSV()
-	end
-end)
-
 local draggingHue = false
 HueDragger.MouseButton1Down:Connect(function()
 	draggingHue = true
 end)
 
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingColor = false
+		draggingHue = false
+	end
+end)
+
 UserInputService.InputChanged:Connect(function(input)
-	if draggingHue and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local mousePos = UserInputService:GetMouseLocation()
-		local relativePos = math.clamp((mousePos.X - HueBar.AbsolutePosition.X) / HueBar.AbsoluteSize.X, 0, 1)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		if draggingColor then
+			local mousePos = UserInputService:GetMouseLocation()
+			local relativeX = math.clamp((mousePos.X - Colorview.AbsolutePosition.X) / Colorview.AbsoluteSize.X, 0, 1)
+			local relativeY = math.clamp((mousePos.Y - Colorview.AbsolutePosition.Y) / Colorview.AbsoluteSize.Y, 0, 1)
+			
+			currentSat = relativeX
+			currentVal = 1 - relativeY
+			
+			ColorSelector.Position = UDim2.new(relativeX, 0, relativeY, 0)
+			updateColorFromHSV()
+		end
 		
-		currentHue = relativePos * 360
-		HueDragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
-		
-		local hueColor = Color3.fromHSV(relativePos, 1, 1)
-		Colorview.BackgroundColor3 = hueColor
-		
-		updateColorFromHSV()
+		if draggingHue then
+			local mousePos = UserInputService:GetMouseLocation()
+			local relativePos = math.clamp((mousePos.X - HueBar.AbsolutePosition.X) / HueBar.AbsoluteSize.X, 0, 1)
+			
+			currentHue = relativePos * 360
+			HueDragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
+			
+			local hueColor = Color3.fromHSV(relativePos, 1, 1)
+			Colorview.BackgroundColor3 = hueColor
+			
+			updateColorFromHSV()
+		end
 	end
 end)
 
@@ -566,6 +570,9 @@ function Library:SetNotificationPosition(position)
 	end
 end
 
+-- Track active notifications for stacking
+local activeNotifications = {}
+
 -- // Notification System
 function Library:Notify(options)
 	local notifType = options.Type or "Notification" -- "Error", "Success", "Warning", "Notification"
@@ -577,7 +584,7 @@ function Library:Notify(options)
 	local icons = {
 		Error = "rbxassetid://94165803738519",
 		Success = "rbxassetid://123509293785756",
-		Warning = "rbxassetid://94165803738519",
+		Warning = "rbxassetid://136655865171247",
 		Notification = ""
 	}
 	
@@ -590,13 +597,25 @@ function Library:Notify(options)
 	
 	-- Position settings
 	local positions = {
-		TopLeft = {start = UDim2.new(-0.2, 0, 0, 0), target = UDim2.new(0.01, 0, 0.05, 0)},
-		TopRight = {start = UDim2.new(1.2, 0, 0, 0), target = UDim2.new(0.85, 0, 0.05, 0)},
-		BottomLeft = {start = UDim2.new(-0.2, 0, 1, 0), target = UDim2.new(0.01, 0, 0.88, 0)},
-		BottomRight = {start = UDim2.new(1.2, 0, 1, 0), target = UDim2.new(0.85, 0, 0.88, 0)}
+		TopLeft = {start = UDim2.new(-0.2, 0, 0, 0), target = UDim2.new(0.01, 0, 0.05, 0), direction = 1},
+		TopRight = {start = UDim2.new(1.2, 0, 0, 0), target = UDim2.new(0.85, 0, 0.05, 0), direction = 1},
+		BottomLeft = {start = UDim2.new(-0.2, 0, 1, 0), target = UDim2.new(0.01, 0, 0.88, 0), direction = -1},
+		BottomRight = {start = UDim2.new(1.2, 0, 1, 0), target = UDim2.new(0.85, 0, 0.88, 0), direction = -1}
 	}
 	
 	local pos = positions[position] or positions.BottomRight
+	
+	-- Calculate offset for stacking
+	if not activeNotifications[position] then
+		activeNotifications[position] = {}
+	end
+	
+	local offset = 0
+	for _, notif in ipairs(activeNotifications[position]) do
+		if notif and notif.Parent then
+			offset = offset + (110 * pos.direction)
+		end
+	end
 	
 	local notif = createInstance("Frame", {
 		Name = "Notification",
@@ -608,9 +627,18 @@ function Library:Notify(options)
 		ZIndex = 200
 	})
 	
+	table.insert(activeNotifications[position], notif)
+	
 	createInstance("UICorner", {
 		Parent = notif,
-		CornerRadius = UDim.new(0, 5)
+		CornerRadius = UDim.new(0, 8)
+	})
+	
+	createInstance("UIStroke", {
+		Parent = notif,
+		Color = Color3.fromRGB(45, 45, 48),
+		Thickness = 1,
+		Transparency = 0.5
 	})
 	
 	local titleLabel = createInstance("TextLabel", {
@@ -682,19 +710,60 @@ function Library:Notify(options)
 	
 	createInstance("UICorner", {
 		Parent = bar,
-		CornerRadius = UDim.new(0, 5)
+		CornerRadius = UDim.new(1, 0)
 	})
 	
-	-- Animate in
-	createTween(notif, {Position = pos.target}, 0.5):Play()
+	-- Calculate target position with offset for stacking
+	local targetPos = UDim2.new(
+		pos.target.X.Scale,
+		pos.target.X.Offset,
+		pos.target.Y.Scale,
+		pos.target.Y.Offset + offset
+	)
+	
+	-- Animate in with smooth easing
+	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local slideIn = TweenService:Create(notif, tweenInfo, {Position = targetPos})
+	slideIn:Play()
 	
 	-- Animate bar
 	task.spawn(function()
-		createTween(bar, {Size = UDim2.new(0, 0, 0, 6)}, duration):Play()
+		task.wait(0.3)
+		local barTween = TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 6)})
+		barTween:Play()
+		
 		task.wait(duration)
-		createTween(notif, {Position = pos.start}, 0.5):Play()
-		task.wait(0.5)
+		
+		-- Slide out with smooth easing
+		local slideOut = TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = pos.start})
+		slideOut:Play()
+		
+		task.wait(0.4)
+		
+		-- Remove from active notifications
+		for i, v in ipairs(activeNotifications[position]) do
+			if v == notif then
+				table.remove(activeNotifications[position], i)
+				break
+			end
+		end
+		
 		notif:Destroy()
+		
+		-- Reposition remaining notifications
+		local currentOffset = 0
+		for _, remainingNotif in ipairs(activeNotifications[position]) do
+			if remainingNotif and remainingNotif.Parent then
+				local newPos = UDim2.new(
+					pos.target.X.Scale,
+					pos.target.X.Offset,
+					pos.target.Y.Scale,
+					pos.target.Y.Offset + currentOffset
+				)
+				TweenService:Create(remainingNotif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = newPos}):Play()
+				currentOffset = currentOffset + (110 * pos.direction)
+			end
+		end
 	end)
 end
 
@@ -791,6 +860,7 @@ function Library:CreateTab(name)
 		local Card = {}
 		Card.Name = name
 		Card.Elements = {}
+		Card.LayoutOrder = #Tab.Cards + 1
 		
 		local cardFrame = createInstance("Frame", {
 			Name = name,
@@ -798,6 +868,7 @@ function Library:CreateTab(name)
 			Parent = tabContainer,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
+			LayoutOrder = Card.LayoutOrder,
 			ZIndex = 1
 		})
 		
@@ -1205,12 +1276,22 @@ function Library:CreateTab(name)
 			
 			local isOpen = false
 			
-			-- Update dropdown position when button is clicked
+			-- Update dropdown position when button is clicked or scrolled
 			local function updateDropdownPosition()
 				local buttonPos = frame.AbsolutePosition
 				local buttonSize = frame.AbsoluteSize
 				dropContent.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 5)
 			end
+			
+			-- Update position when scrolling
+			mainHolder:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+				if isOpen then
+					updateDropdownPosition()
+				end
+			end)
+			
+			-- Update position on window resize or movement
+			local updateConnection
 			
 			button.MouseButton1Click:Connect(function()
 				isOpen = not isOpen
@@ -1220,7 +1301,20 @@ function Library:CreateTab(name)
 					local contentHeight = (#list * 32) + 16
 					createTween(dropContent, {Size = UDim2.new(0, 320, 0, contentHeight)}, 0.3):Play()
 					createTween(arrow, {Rotation = 180}, 0.3):Play()
+					
+					-- Continuously update position while open
+					if updateConnection then
+						updateConnection:Disconnect()
+					end
+					updateConnection = game:GetService("RunService").RenderStepped:Connect(function()
+						if isOpen then
+							updateDropdownPosition()
+						end
+					end)
 				else
+					if updateConnection then
+						updateConnection:Disconnect()
+					end
 					createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
 					createTween(arrow, {Rotation = 0}, 0.3):Play()
 					task.wait(0.3)
@@ -1246,6 +1340,9 @@ function Library:CreateTab(name)
 						
 						if not inDropdown and not inButton then
 							isOpen = false
+							if updateConnection then
+								updateConnection:Disconnect()
+							end
 							createTween(dropContent, {Size = UDim2.new(0, 320, 0, 0)}, 0.3):Play()
 							createTween(arrow, {Rotation = 0}, 0.3):Play()
 							task.wait(0.3)
