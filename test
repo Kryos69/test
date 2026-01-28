@@ -1,6 +1,4 @@
--- 41
--- // Neptune UI Library
--- // Created by vFishy / xn90ubwbzuqegtn \\ --
+--/ wat
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -917,7 +915,8 @@ function Library:CreateTab(name)
 
 		local rowWrapper = createInstance("Frame", {
 			Name = "Row_" .. Tab.RowCount,
-			Size = UDim2.new(1, 0, 0, 314), -- TIGHT row height
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y, -- AUTO SIZE ROW
 			Parent = Scroll,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -929,13 +928,14 @@ function Library:CreateTab(name)
 		Tab.Rows[Tab.RowCount] = rowWrapper
 	end
 
-	-- attach to current row
+	-- attach card to current row
 	local rowWrapper = Tab.Rows[Tab.RowCount]
 
-	-- actual card
+	-- card frame
 	local cardFrame = createInstance("Frame", {
 		Name = name,
 		Size = UDim2.new(0, 347, 0, 314),
+		AutomaticSize = Enum.AutomaticSize.None,
 		AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
 		Position = Card.Side == "Right"
 			and UDim2.new(1, 0, 0, 0)
@@ -951,6 +951,7 @@ function Library:CreateTab(name)
 
 	return Card
 end
+
 
 		
 		local cardFrame = createInstance("Frame", {
