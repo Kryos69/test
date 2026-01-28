@@ -1,4 +1,4 @@
--- 67
+-- // dasd
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -839,6 +839,8 @@ function Library:CreateTab(name)
 	local Tab = {}
 	Tab.Name = name
 	Tab.Cards = {}
+	Tab.LeftCards = {}
+	Tab.RightCards = {}
 	
 	local tabButton = createInstance("TextButton", {
 		Name = "TabButton",
@@ -908,8 +910,19 @@ function Library:CreateTab(name)
 		local Card = {}
 		Card.Name = name
 		Card.Elements = {}
-		Card.LayoutOrder = #Tab.Cards + 1
 		Card.Side = side or "Left"
+		
+		-- Determine layout order based on side
+		local layoutOrder
+		if Card.Side == "Left" then
+			layoutOrder = #Tab.LeftCards * 2
+			table.insert(Tab.LeftCards, Card)
+		else
+			layoutOrder = #Tab.RightCards * 2 + 1
+			table.insert(Tab.RightCards, Card)
+		end
+		
+		Card.LayoutOrder = layoutOrder
 		
 		-- Create full-width wrapper that UIListLayout controls
 		local cardWrapper = createInstance("Frame", {
@@ -1264,10 +1277,9 @@ function Library:CreateTab(name)
 				ZIndex = 51
 			})
 			
-			-- Dropdown content in Neptune with proper absolute positioning
 			local dropContent = createInstance("Frame", {
 				Position = UDim2.new(0, 0, 0, 0),
-				Size = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 320, 0, 0),
 				Parent = Neptune,
 				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
 				ClipsDescendants = true,
@@ -1304,48 +1316,56 @@ function Library:CreateTab(name)
 				PaddingRight = UDim.new(0, 8)
 			})
 			
-			for _, option in ipairs(list) do
-				local optionBtn = createInstance("TextButton", {
-					Size = UDim2.new(1, -16, 0, 28),
-					Parent = dropContent,
-					BackgroundTransparency = 1,
-					Font = Enum.Font.Gotham,
-					Text = option,
-					TextSize = 13,
-					TextXAlignment = Enum.TextXAlignment.Center,
-					TextColor3 = Color3.fromRGB(255, 255, 255),
-					AutoButtonColor = false,
-					BorderSizePixel = 0,
-					ZIndex = 201
-				})
-				
-				createInstance("UICorner", {
-					Parent = optionBtn,
-					CornerRadius = UDim.new(0, 4)
-				})
-				
-				optionBtn.MouseEnter:Connect(function()
-					createTween(optionBtn, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.2):Play()
-				end)
-				
-				optionBtn.MouseLeave:Connect(function()
-					createTween(optionBtn, {BackgroundTransparency = 1}, 0.2):Play()
-				end)
-				
-				optionBtn.MouseButton1Click:Connect(function()
-					button.Text = option
-					isOpen = false
-					if updateConnection then
-						updateConnection:Disconnect()
-						updateConnection = nil
+			local function createOptions()
+				for _, child in pairs(dropContent:GetChildren()) do
+					if child:IsA("TextButton") then
+						child:Destroy()
 					end
-					createTween(dropContent, {Size = UDim2.new(0, 0, 0, 0)}, 0.2):Play()
-					createTween(arrow, {Rotation = 180}, 0.2):Play()
-					task.wait(0.2)
-					dropContent.Visible = false
-					callback(option)
-				end)
+				end
+				
+				for _, option in ipairs(list) do
+					local optionBtn = createInstance("TextButton", {
+						Size = UDim2.new(1, -16, 0, 28),
+						Parent = dropContent,
+						BackgroundTransparency = 1,
+						Font = Enum.Font.Gotham,
+						Text = option,
+						TextSize = 13,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						AutoButtonColor = false,
+						BorderSizePixel = 0,
+						ZIndex = 201
+					})
+					
+					createInstance("UICorner", {
+						Parent = optionBtn,
+						CornerRadius = UDim.new(0, 4)
+					})
+					
+					optionBtn.MouseEnter:Connect(function()
+						createTween(optionBtn, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.2):Play()
+					end)
+					
+					optionBtn.MouseLeave:Connect(function()
+						createTween(optionBtn, {BackgroundTransparency = 1}, 0.2):Play()
+					end)
+					
+					optionBtn.MouseButton1Click:Connect(function()
+						button.Text = option
+						isOpen = false
+						if updateConnection then
+							updateConnection:Disconnect()
+							updateConnection = nil
+						end
+						dropContent.Visible = false
+						createTween(arrow, {Rotation = 180}, 0.15):Play()
+						callback(option)
+					end)
+				end
 			end
+			
+			createOptions()
 			
 			local isOpen = false
 			local updateConnection
@@ -1357,28 +1377,28 @@ function Library:CreateTab(name)
 			end
 			
 			button.MouseButton1Click:Connect(function()
-				isOpen = not isOpen
 				if isOpen then
+					-- Close dropdown
+					isOpen = false
+					if updateConnection then
+						updateConnection:Disconnect()
+						updateConnection = nil
+					end
+					dropContent.Visible = false
+					createTween(arrow, {Rotation = 180}, 0.15):Play()
+				else
+					-- Open dropdown
+					isOpen = true
 					local contentHeight = math.min(#list * 36 + 16, 250)
 					updateDropdownPosition()
-					dropContent.Size = UDim2.new(0, 320, 0, 0)
+					dropContent.Size = UDim2.new(0, 320, 0, contentHeight)
 					dropContent.Visible = true
-					createTween(dropContent, {Size = UDim2.new(0, 320, 0, contentHeight)}, 0.3):Play()
-					createTween(arrow, {Rotation = 0}, 0.3):Play()
+					createTween(arrow, {Rotation = 0}, 0.15):Play()
 					
 					if updateConnection then
 						updateConnection:Disconnect()
 					end
 					updateConnection = game:GetService("RunService").Heartbeat:Connect(updateDropdownPosition)
-				else
-					if updateConnection then
-						updateConnection:Disconnect()
-						updateConnection = nil
-					end
-					createTween(dropContent, {Size = UDim2.new(0, 0, 0, 0)}, 0.2):Play()
-					createTween(arrow, {Rotation = 180}, 0.2):Play()
-					task.wait(0.2)
-					dropContent.Visible = false
 				end
 			end)
 			
@@ -1402,10 +1422,8 @@ function Library:CreateTab(name)
 							updateConnection:Disconnect()
 							updateConnection = nil
 						end
-						createTween(dropContent, {Size = UDim2.new(0, 0, 0, 0)}, 0.2):Play()
-						createTween(arrow, {Rotation = 180}, 0.2):Play()
-						task.wait(0.2)
 						dropContent.Visible = false
+						createTween(arrow, {Rotation = 180}, 0.15):Play()
 					end
 				end
 			end)
@@ -1416,56 +1434,8 @@ function Library:CreateTab(name)
 					callback(value)
 				end,
 				Refresh = function(newList)
-					for _, child in pairs(dropContent:GetChildren()) do
-						if child:IsA("TextButton") then
-							child:Destroy()
-						end
-					end
-					
 					list = newList
-					
-					for _, option in ipairs(newList) do
-						local optionBtn = createInstance("TextButton", {
-							Size = UDim2.new(1, -16, 0, 28),
-							Parent = dropContent,
-							BackgroundTransparency = 1,
-							Font = Enum.Font.Gotham,
-							Text = option,
-							TextSize = 13,
-							TextXAlignment = Enum.TextXAlignment.Center,
-							TextColor3 = Color3.fromRGB(255, 255, 255),
-							AutoButtonColor = false,
-							BorderSizePixel = 0,
-							ZIndex = 201
-						})
-						
-						createInstance("UICorner", {
-							Parent = optionBtn,
-							CornerRadius = UDim.new(0, 4)
-						})
-						
-						optionBtn.MouseEnter:Connect(function()
-							createTween(optionBtn, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.2):Play()
-						end)
-						
-						optionBtn.MouseLeave:Connect(function()
-							createTween(optionBtn, {BackgroundTransparency = 1}, 0.2):Play()
-						end)
-						
-						optionBtn.MouseButton1Click:Connect(function()
-							button.Text = option
-							isOpen = false
-							if updateConnection then
-								updateConnection:Disconnect()
-								updateConnection = nil
-							end
-							createTween(dropContent, {Size = UDim2.new(0, 0, 0, 0)}, 0.2):Play()
-							createTween(arrow, {Rotation = 180}, 0.2):Play()
-							task.wait(0.2)
-							dropContent.Visible = false
-							callback(option)
-						end)
-					end
+					createOptions()
 				end
 			}
 		end
