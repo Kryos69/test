@@ -1,4 +1,4 @@
---/ wat
+--/ watdd
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -898,67 +898,47 @@ function Library:CreateTab(name)
 	
 	table.insert(Library.Tabs, Tab)
 	
-	-- // watchyourself
 	function Tab:CreateCard(name, side)
-	local Card = {}
-	Card.Name = name
-	Card.Elements = {}
-	Card.Side = side or "Left"
+		local Card = {}
+		Card.Name = name
+		Card.Elements = {}
+		Card.Side = side or "Left"
 
-	-- row storage (once per tab)
-	Tab.Rows = Tab.Rows or {}
-	Tab.RowCount = Tab.RowCount or 0
+		-- row storage (once per tab)
+		Tab.Rows = Tab.Rows or {}
+		Tab.RowCount = Tab.RowCount or 0
 
-	-- create a new row ONLY when creating a Left card
-	if Card.Side == "Left" then
-		Tab.RowCount += 1
+		-- create a new row ONLY when creating a Left card
+		if Card.Side == "Left" then
+			Tab.RowCount = Tab.RowCount + 1
 
-		local rowWrapper = createInstance("Frame", {
-			Name = "Row_" .. Tab.RowCount,
-			Size = UDim2.new(1, 0, 0, 0),
-			AutomaticSize = Enum.AutomaticSize.Y, -- AUTO SIZE ROW
-			Parent = Scroll,
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			LayoutOrder = Tab.RowCount,
-			Visible = Library.CurrentTab == Tab,
-			ZIndex = 1
-		})
+			local rowWrapper = createInstance("Frame", {
+				Name = "Row_" .. Tab.RowCount,
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Parent = Scroll,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				LayoutOrder = Tab.RowCount,
+				Visible = Library.CurrentTab == Tab,
+				ZIndex = 1
+			})
 
-		Tab.Rows[Tab.RowCount] = rowWrapper
-	end
+			Tab.Rows[Tab.RowCount] = rowWrapper
+		end
 
-	-- attach card to current row
-	local rowWrapper = Tab.Rows[Tab.RowCount]
+		-- attach card to current row
+		local rowWrapper = Tab.Rows[Tab.RowCount]
 
-	-- card frame
-	local cardFrame = createInstance("Frame", {
-		Name = name,
-		Size = UDim2.new(0, 347, 0, 314),
-		AutomaticSize = Enum.AutomaticSize.None,
-		AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
-		Position = Card.Side == "Right"
-			and UDim2.new(1, 0, 0, 0)
-			or UDim2.new(0, 0, 0, 0),
-		Parent = rowWrapper,
-		BackgroundColor3 = Color3.fromRGB(21, 21, 23),
-		BorderSizePixel = 0,
-		ZIndex = 1
-	})
-
-	Card.Frame = cardFrame
-	Card.Wrapper = rowWrapper
-
-	return Card
-end
-
-
-		
+		-- card frame
 		local cardFrame = createInstance("Frame", {
 			Name = name,
 			Size = UDim2.new(0, 347, 0, 314),
+			AutomaticSize = Enum.AutomaticSize.None,
 			AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
-			Position = Card.Side == "Right" and UDim2.new(1, 0, 0, 0) or UDim2.new(0, 0, 0, 0),
+			Position = Card.Side == "Right"
+				and UDim2.new(1, 0, 0, 0)
+				or UDim2.new(0, 0, 0, 0),
 			Parent = rowWrapper,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
@@ -1031,7 +1011,7 @@ end
 		
 		Card.Frame = cardFrame
 		Card.Holder = mainHolder
-		Card.Wrapper = cardWrapper
+		Card.Wrapper = rowWrapper
 		
 		function Card:AddToggle(options)
 			local name = options.Name or "Toggle"
