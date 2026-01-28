@@ -1,4 +1,5 @@
---//
+-- // Neptune UI Library
+-- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -62,12 +63,10 @@ local function createTween(object, goal, duration)
 	return tween
 end
 
--- // Main Library
-
 local Library = {}
 Library.Tabs = {}
 Library.CurrentTab = nil
-Library.NotificationPosition = "BottomRight" -- Default notification position
+Library.NotificationPosition = "BottomRight"
 Library.HideInfo = false
 Library.ToggleKey = Enum.KeyCode.RightShift
 
@@ -100,7 +99,7 @@ local function updateScale()
 	local scaleX = viewportSize.X / baseWidth
 	local scaleY = viewportSize.Y / baseHeight
 	local scale = math.min(scaleX, scaleY, 1)
-	UIScale.Scale = math.max(scale, 0.5) -- Minimum scale of 0.5
+	UIScale.Scale = math.max(scale, 0.5)
 end
 
 updateScale()
@@ -283,18 +282,18 @@ function Library:SetHideInfo(value)
 	updatePlayerInfo()
 end
 
--- // API Hook for expiration (commented out)
+-- // API Hook for expiration
 -- local function getExpirationFromAPI()
 --     local success, result = pcall(function()
 --         return game:HttpGet("YOUR_API_URL_HERE")
 --     end)
 --     if success then
---         return result -- Expected format: "5M 5D 15H 15S"
+--         return result
 --     end
 --     return "5M 5D 15H 15S"
 -- end
 
-local expirationTime = "5M 5D 15H 15S" -- getExpirationFromAPI()
+local expirationTime = "5M 5D 15H 15S"
 
 createInstance("TextLabel", {
 	Name = "Expire",
@@ -326,14 +325,12 @@ CloseButton.MouseButton1Click:Connect(function()
 	Neptune:Destroy()
 end)
 
--- UI Toggle Keybind
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if not gameProcessed and input.KeyCode == Library.ToggleKey then
 		Holder.Visible = not Holder.Visible
 	end
 end)
 
--- Function to set toggle key
 function Library:SetToggleKey(keyCode)
 	self.ToggleKey = keyCode
 end
@@ -629,7 +626,6 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 function Library:SetNotificationPosition(position)
-	-- "TopLeft", "TopRight", "BottomLeft", "BottomRight"
 	local validPositions = {
 		TopLeft = true,
 		TopRight = true,
@@ -649,7 +645,7 @@ end
 local activeNotifications = {}
 
 function Library:Notify(options)
-	local notifType = options.Type or "Notification" -- "Error", "Success", "Warning", "Notification"
+	local notifType = options.Type or "Notification"
 	local title = options.Title or "Notification"
 	local description = options.Description or ""
 	local duration = options.Duration or 3
@@ -713,7 +709,7 @@ function Library:Notify(options)
 		Transparency = 0.5
 	})
 	
-	local titleLabel = createInstance("TextLabel", {
+	createInstance("TextLabel", {
 		Name = "Title",
 		Position = UDim2.new(0, 35, 0, 8),
 		Size = UDim2.new(1, -45, 0, 24),
@@ -796,7 +792,6 @@ function Library:Notify(options)
 	local slideIn = TweenService:Create(notif, tweenInfo, {Position = targetPos})
 	slideIn:Play()
 	
-	-- Animate bar
 	task.spawn(function()
 		task.wait(0.3)
 		local barTween = TweenService:Create(bar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 6)})
@@ -866,7 +861,6 @@ function Library:CreateTab(name)
 	
 	tabButton.MouseButton1Click:Connect(function()
 		for _, otherTab in pairs(Library.Tabs) do
-			-- Hide all card wrappers from other tabs
 			for _, card in pairs(otherTab.Cards) do
 				if card.Wrapper then
 					card.Wrapper.Visible = false
@@ -875,7 +869,6 @@ function Library:CreateTab(name)
 			otherTab.Button.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 		end
 		
-		-- Show card wrappers from this tab
 		for _, card in pairs(Tab.Cards) do
 			if card.Wrapper then
 				card.Wrapper.Visible = true
@@ -905,37 +898,35 @@ function Library:CreateTab(name)
 	
 	table.insert(Library.Tabs, Tab)
 	
+	-- // watchyourself
 	function Tab:CreateCard(name, side)
 		local Card = {}
 		Card.Name = name
 		Card.Elements = {}
 		Card.Side = side or "Left"
 		
-		-- Determine layout order based on side
-		local layoutOrder
+		local rowIndex
 		if Card.Side == "Left" then
-			layoutOrder = #Tab.LeftCards * 2
 			table.insert(Tab.LeftCards, Card)
+			rowIndex = #Tab.LeftCards
 		else
-			layoutOrder = #Tab.RightCards * 2 + 1
 			table.insert(Tab.RightCards, Card)
+			rowIndex = #Tab.RightCards
 		end
 		
-		Card.LayoutOrder = layoutOrder
+		Card.LayoutOrder = rowIndex
 		
-		-- Create full-width wrapper that UIListLayout controls
 		local cardWrapper = createInstance("Frame", {
-			Name = "CardWrapper_" .. Card.LayoutOrder,
+			Name = "CardWrapper_" .. Card.Side .. "_" .. rowIndex,
 			Size = UDim2.new(1, 0, 0, 329),
 			Parent = Scroll,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-			LayoutOrder = Card.LayoutOrder,
+			LayoutOrder = rowIndex,
 			Visible = Library.CurrentTab == Tab,
 			ZIndex = 1
 		})
 		
-		-- Card positioned inside wrapper using AnchorPoint
 		local cardFrame = createInstance("Frame", {
 			Name = name,
 			Size = UDim2.new(0, 347, 0, 314),
@@ -1095,7 +1086,7 @@ function Library:CreateTab(name)
 				ZIndex = 1
 			})
 			
-			local title = createInstance("TextLabel", {
+			createInstance("TextLabel", {
 				Position = UDim2.new(0, 5, 0, 0),
 				Size = UDim2.new(0, 200, 0, 20),
 				Parent = frame,
@@ -1298,7 +1289,7 @@ function Library:CreateTab(name)
 				Thickness = 1
 			})
 			
-			local listLayout = createInstance("UIListLayout", {
+			createInstance("UIListLayout", {
 				Parent = dropContent,
 				Padding = UDim.new(0, 4),
 				FillDirection = Enum.FillDirection.Vertical,
@@ -1377,7 +1368,6 @@ function Library:CreateTab(name)
 			
 			button.MouseButton1Click:Connect(function()
 				if isOpen then
-					-- Close dropdown
 					isOpen = false
 					if updateConnection then
 						updateConnection:Disconnect()
@@ -1386,7 +1376,6 @@ function Library:CreateTab(name)
 					dropContent.Visible = false
 					createTween(arrow, {Rotation = 180}, 0.15):Play()
 				else
-					-- Open dropdown
 					isOpen = true
 					local contentHeight = math.min(#list * 36 + 16, 250)
 					updateDropdownPosition()
@@ -1493,7 +1482,6 @@ function Library:CreateTab(name)
 					callback(color)
 				end
 				
-				-- Set initial color
 				local h, s, v = default:ToHSV()
 				currentHue = h * 360
 				currentSat = s
