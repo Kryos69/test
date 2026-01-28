@@ -1,5 +1,4 @@
--- // Neptune UI Libraryddasdadsadasdsadsadsad
--- // Created by vFishy / xn90ubwbzuqegtn \\ --
+-- FUCK NAMELESS BRO
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -907,46 +906,86 @@ function Library:CreateTab(name)
 		Card.Side = side or "Left"
 		
 		local needsNewRow = false
-		
-		if Card.Side == "Left" then
-			table.insert(Tab.LeftCards, Card)
-			if #Tab.LeftCards > #Tab.RightCards then
-				Tab.RowCount = Tab.RowCount + 1
-				needsNewRow = true
-			end
-		else
-			table.insert(Tab.RightCards, Card)
-			if #Tab.RightCards > #Tab.LeftCards then
-				Tab.RowCount = Tab.RowCount + 1
-				needsNewRow = true
-			end
-		end
-		
-		local rowIndex = Tab.RowCount
-		if not needsNewRow and Tab.RowCount == 0 then
-			Tab.RowCount = 1
-			rowIndex = 1
-		end
-		
-		Card.LayoutOrder = rowIndex
-		
-		local cardWrapper = createInstance("Frame", {
-			Name = "CardWrapper_" .. Card.Side .. "_" .. rowIndex,
-			Size = UDim2.new(1, 0, 0, 329),
-			Parent = Scroll,
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			LayoutOrder = rowIndex,
-			Visible = Library.CurrentTab == Tab,
-			ZIndex = 1
-		})
+
+if Card.Side == "Left" then
+	table.insert(Tab.LeftCards, Card)
+	if #Tab.LeftCards > #Tab.RightCards then
+		Tab.RowCount = Tab.RowCount + 1
+		needsNewRow = true
+	end
+else
+	table.insert(Tab.RightCards, Card)
+	if #Tab.RightCards > #Tab.LeftCards then
+		Tab.RowCount = Tab.RowCount + 1
+		needsNewRow = true
+	end
+end
+
+local rowIndex = Tab.RowCount
+if not needsNewRow and Tab.RowCount == 0 then
+	Tab.RowCount = 1
+	rowIndex = 1
+end
+
+Card.LayoutOrder = rowIndex
+
+		-- row-based layout (ONE wrapper per row)
+Tab.Rows = Tab.Rows or {}
+Tab.RowCount = Tab.RowCount or 0
+
+-- create a new row ONLY when making a Left card
+if Card.Side == "Left" then
+	Tab.RowCount += 1
+
+	local rowWrapper = createInstance("Frame", {
+		Name = "Row_" .. Tab.RowCount,
+		Size = UDim2.new(1, 0, 0, 329),
+		Parent = Scroll,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		LayoutOrder = Tab.RowCount,
+		Visible = Library.CurrentTab == Tab,
+		ZIndex = 1
+	})
+
+	Tab.Rows[Tab.RowCount] = rowWrapper
+end
+
+-- use the current row
+local rowWrapper = Tab.Rows[Tab.RowCount]
+
+-- row-based layout (ONE wrapper per row)
+Tab.Rows = Tab.Rows or {}
+Tab.RowCount = Tab.RowCount or 0
+
+-- create a new row ONLY when making a Left card
+if Card.Side == "Left" then
+	Tab.RowCount += 1
+
+	local rowWrapper = createInstance("Frame", {
+		Name = "Row_" .. Tab.RowCount,
+		Size = UDim2.new(1, 0, 0, 329),
+		Parent = Scroll,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		LayoutOrder = Tab.RowCount,
+		Visible = Library.CurrentTab == Tab,
+		ZIndex = 1
+	})
+
+	Tab.Rows[Tab.RowCount] = rowWrapper
+end
+
+-- use the current row
+local rowWrapper = Tab.Rows[Tab.RowCount]
+
 		
 		local cardFrame = createInstance("Frame", {
 			Name = name,
 			Size = UDim2.new(0, 347, 0, 314),
 			AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
 			Position = Card.Side == "Right" and UDim2.new(1, 0, 0, 0) or UDim2.new(0, 0, 0, 0),
-			Parent = cardWrapper,
+			Parent = rowWrapper,
 			BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 			BorderSizePixel = 0,
 			ZIndex = 1
