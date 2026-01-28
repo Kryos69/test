@@ -1,5 +1,4 @@
--- // dasd
--- // Created by vFishy / xn90ubwbzuqegtn \\ --
+--//
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
