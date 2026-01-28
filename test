@@ -309,6 +309,7 @@ createInstance("TextLabel", {
 	ZIndex = 4
 })
 
+-- Fixed close button with no text selection
 local CloseButton = createInstance("ImageButton", {
 	Position = UDim2.new(0.945, 0, 0.025, 0),
 	Size = UDim2.new(0, 35, 0, 35),
@@ -317,7 +318,10 @@ local CloseButton = createInstance("ImageButton", {
 	Image = "rbxassetid://90578957355678",
 	ImageColor3 = Color3.fromRGB(255, 255, 255),
 	BorderSizePixel = 0,
-	ZIndex = 10
+	ZIndex = 10,
+	AutoButtonColor = false,
+	Active = false,
+	Selectable = false
 })
 
 CloseButton.MouseButton1Click:Connect(function()
@@ -860,22 +864,42 @@ function Library:CreateTab(name)
 	Tab.Button = tabButton
 	
 	tabButton.MouseButton1Click:Connect(function()
+		-- Hide all tabs and reset their colors with tween
 		for _, otherTab in pairs(Library.Tabs) do
 			for _, card in pairs(otherTab.Cards) do
 				if card.Wrapper then
+					-- Fade out animation
+					createTween(card.Wrapper, {
+						BackgroundTransparency = 1
+					}, 0.2):Play()
+					
+					task.wait(0.05)
 					card.Wrapper.Visible = false
 				end
 			end
-			otherTab.Button.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+			-- Smooth color transition for tab buttons
+			createTween(otherTab.Button, {BackgroundColor3 = Color3.fromRGB(25, 25, 28)}, 0.3):Play()
 		end
 		
-		for _, card in pairs(Tab.Cards) do
+		-- Show current tab with animation
+		task.wait(0.1)
+		for i, card in pairs(Tab.Cards) do
 			if card.Wrapper then
 				card.Wrapper.Visible = true
+				card.Wrapper.BackgroundTransparency = 1
+				
+				-- Stagger the fade-in animation for each card
+				task.spawn(function()
+					task.wait(i * 0.05)
+					createTween(card.Wrapper, {
+						BackgroundTransparency = 1
+					}, 0.3):Play()
+				end)
 			end
 		end
 		
-		tabButton.BackgroundColor3 = Color3.fromRGB(69, 94, 255)
+		-- Smooth color transition for selected tab
+		createTween(tabButton, {BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.3):Play()
 		Library.CurrentTab = Tab
 	end)
 	
@@ -1247,6 +1271,14 @@ function Library:CreateTab(name)
 				CornerRadius = UDim.new(0, 4)
 			})
 			
+			-- Add subtle glow effect
+			local glowStroke = createInstance("UIStroke", {
+				Parent = frame,
+				Color = Color3.fromRGB(69, 94, 255),
+				Thickness = 0,
+				Transparency = 1
+			})
+			
 			local button = createInstance("TextButton", {
 				Position = UDim2.new(0, 10, 0.5, 0),
 				AnchorPoint = Vector2.new(0, 0.5),
@@ -1274,11 +1306,12 @@ function Library:CreateTab(name)
 				ZIndex = 51
 			})
 			
+			-- Enhanced dropdown content with shadow effect
 			local dropContent = createInstance("Frame", {
 				Position = UDim2.new(0, 0, 0, 0),
 				Size = UDim2.new(0, 320, 0, 0),
 				Parent = Neptune,
-				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+				BackgroundColor3 = Color3.fromRGB(21, 21, 23),
 				ClipsDescendants = true,
 				BorderSizePixel = 0,
 				Visible = false,
@@ -1287,17 +1320,45 @@ function Library:CreateTab(name)
 			
 			createInstance("UICorner", {
 				Parent = dropContent,
-				CornerRadius = UDim.new(0, 4)
+				CornerRadius = UDim.new(0, 8)
 			})
 			
+			-- Enhanced stroke with gradient-like effect
 			createInstance("UIStroke", {
 				Parent = dropContent,
-				Color = Color3.fromRGB(45, 45, 48),
-				Thickness = 1
+				Color = Color3.fromRGB(69, 94, 255),
+				Thickness = 2,
+				Transparency = 0.3
 			})
 			
-			createInstance("UIListLayout", {
+			-- Add a subtle shadow effect
+			local shadow = createInstance("ImageLabel", {
+				Name = "Shadow",
+				Position = UDim2.new(0, -15, 0, -15),
+				Size = UDim2.new(1, 30, 1, 30),
 				Parent = dropContent,
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://5554236805",
+				ImageColor3 = Color3.fromRGB(0, 0, 0),
+				ImageTransparency = 0.5,
+				ScaleType = Enum.ScaleType.Slice,
+				SliceCenter = Rect.new(23, 23, 277, 277),
+				ZIndex = 199
+			})
+			
+			local scrollFrame = createInstance("ScrollingFrame", {
+				Size = UDim2.new(1, 0, 1, 0),
+				Parent = dropContent,
+				BackgroundTransparency = 1,
+				ScrollBarThickness = 4,
+				ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
+				BorderSizePixel = 0,
+				ZIndex = 201,
+				CanvasSize = UDim2.new(0, 0, 0, 0)
+			})
+			
+			local listLayout = createInstance("UIListLayout", {
+				Parent = scrollFrame,
 				Padding = UDim.new(0, 4),
 				FillDirection = Enum.FillDirection.Vertical,
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
@@ -1306,15 +1367,19 @@ function Library:CreateTab(name)
 			})
 			
 			createInstance("UIPadding", {
-				Parent = dropContent,
+				Parent = scrollFrame,
 				PaddingTop = UDim.new(0, 8),
 				PaddingBottom = UDim.new(0, 8),
 				PaddingLeft = UDim.new(0, 8),
 				PaddingRight = UDim.new(0, 8)
 			})
 			
+			listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 16)
+			end)
+			
 			local function createOptions()
-				for _, child in pairs(dropContent:GetChildren()) do
+				for _, child in pairs(scrollFrame:GetChildren()) do
 					if child:IsA("TextButton") then
 						child:Destroy()
 					end
@@ -1322,10 +1387,11 @@ function Library:CreateTab(name)
 				
 				for _, option in ipairs(list) do
 					local optionBtn = createInstance("TextButton", {
-						Size = UDim2.new(1, -16, 0, 28),
-						Parent = dropContent,
+						Size = UDim2.new(1, -16, 0, 32),
+						Parent = scrollFrame,
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28),
 						BackgroundTransparency = 1,
-						Font = Enum.Font.Gotham,
+						Font = Enum.Font.GothamMedium,
 						Text = option,
 						TextSize = 13,
 						TextXAlignment = Enum.TextXAlignment.Center,
@@ -1337,26 +1403,71 @@ function Library:CreateTab(name)
 					
 					createInstance("UICorner", {
 						Parent = optionBtn,
-						CornerRadius = UDim.new(0, 4)
+						CornerRadius = UDim.new(0, 6)
+					})
+					
+					-- Add highlight indicator
+					local highlight = createInstance("Frame", {
+						Name = "Highlight",
+						Position = UDim2.new(0, 3, 0.5, 0),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Size = UDim2.new(0, 0, 0, 20),
+						Parent = optionBtn,
+						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
+						BorderSizePixel = 0,
+						ZIndex = 202
+					})
+					
+					createInstance("UICorner", {
+						Parent = highlight,
+						CornerRadius = UDim.new(1, 0)
 					})
 					
 					optionBtn.MouseEnter:Connect(function()
-						createTween(optionBtn, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.2):Play()
+						createTween(optionBtn, {
+							BackgroundTransparency = 0,
+							BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 3, 0, 20)
+						}, 0.15):Play()
 					end)
 					
 					optionBtn.MouseLeave:Connect(function()
-						createTween(optionBtn, {BackgroundTransparency = 1}, 0.2):Play()
+						createTween(optionBtn, {
+							BackgroundTransparency = 1
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 0, 0, 20)
+						}, 0.15):Play()
 					end)
 					
 					optionBtn.MouseButton1Click:Connect(function()
+						-- Click animation
+						createTween(optionBtn, {
+							BackgroundColor3 = Color3.fromRGB(69, 94, 255)
+						}, 0.1):Play()
+						task.wait(0.15)
+						
 						button.Text = option
 						isOpen = false
 						if updateConnection then
 							updateConnection:Disconnect()
 							updateConnection = nil
 						end
+						
+						-- Smooth close animation
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						createTween(glowStroke, {
+							Thickness = 0,
+							Transparency = 1
+						}, 0.2):Play()
+						
+						task.wait(0.2)
 						dropContent.Visible = false
-						createTween(arrow, {Rotation = 180}, 0.15):Play()
 						callback(option)
 					end)
 				end
@@ -1373,6 +1484,25 @@ function Library:CreateTab(name)
 				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 5)
 			end
 			
+			-- Hover effect for main button
+			frame.MouseEnter:Connect(function()
+				if not isOpen then
+					createTween(glowStroke, {
+						Thickness = 1,
+						Transparency = 0.7
+					}, 0.2):Play()
+				end
+			end)
+			
+			frame.MouseLeave:Connect(function()
+				if not isOpen then
+					createTween(glowStroke, {
+						Thickness = 0,
+						Transparency = 1
+					}, 0.2):Play()
+				end
+			end)
+			
 			button.MouseButton1Click:Connect(function()
 				if isOpen then
 					isOpen = false
@@ -1380,15 +1510,35 @@ function Library:CreateTab(name)
 						updateConnection:Disconnect()
 						updateConnection = nil
 					end
+					
+					-- Smooth close animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, 0)
+					}, 0.2):Play()
+					createTween(arrow, {Rotation = 180}, 0.2):Play()
+					createTween(glowStroke, {
+						Thickness = 0,
+						Transparency = 1
+					}, 0.2):Play()
+					
+					task.wait(0.2)
 					dropContent.Visible = false
-					createTween(arrow, {Rotation = 180}, 0.15):Play()
 				else
 					isOpen = true
-					local contentHeight = math.min(#list * 36 + 16, 250)
+					local contentHeight = math.min(#list * 40 + 16, 250)
 					updateDropdownPosition()
-					dropContent.Size = UDim2.new(0, 320, 0, contentHeight)
 					dropContent.Visible = true
-					createTween(arrow, {Rotation = 0}, 0.15):Play()
+					dropContent.Size = UDim2.new(0, 320, 0, 0)
+					
+					-- Smooth open animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, contentHeight)
+					}, 0.3):Play()
+					createTween(arrow, {Rotation = 0}, 0.3):Play()
+					createTween(glowStroke, {
+						Thickness = 2,
+						Transparency = 0.3
+					}, 0.3):Play()
 					
 					if updateConnection then
 						updateConnection:Disconnect()
@@ -1417,8 +1567,18 @@ function Library:CreateTab(name)
 							updateConnection:Disconnect()
 							updateConnection = nil
 						end
+						
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						createTween(glowStroke, {
+							Thickness = 0,
+							Transparency = 1
+						}, 0.2):Play()
+						
+						task.wait(0.2)
 						dropContent.Visible = false
-						createTween(arrow, {Rotation = 180}, 0.15):Play()
 					end
 				end
 			end)
