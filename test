@@ -1,4 +1,4 @@
--- // Neptune UI Library
+-- // Neptune UI Libraryddasdadsadasdsadsadsad
 -- // Created by vFishy / xn90ubwbzuqegtn \\ --
 
 local UserInputService = game:GetService("UserInputService")
@@ -835,6 +835,7 @@ function Library:CreateTab(name)
 	Tab.Cards = {}
 	Tab.LeftCards = {}
 	Tab.RightCards = {}
+	Tab.RowCount = 0
 	
 	local tabButton = createInstance("TextButton", {
 		Name = "TabButton",
@@ -905,13 +906,26 @@ function Library:CreateTab(name)
 		Card.Elements = {}
 		Card.Side = side or "Left"
 		
-		local rowIndex
+		local needsNewRow = false
+		
 		if Card.Side == "Left" then
 			table.insert(Tab.LeftCards, Card)
-			rowIndex = #Tab.LeftCards
+			if #Tab.LeftCards > #Tab.RightCards then
+				Tab.RowCount = Tab.RowCount + 1
+				needsNewRow = true
+			end
 		else
 			table.insert(Tab.RightCards, Card)
-			rowIndex = #Tab.RightCards
+			if #Tab.RightCards > #Tab.LeftCards then
+				Tab.RowCount = Tab.RowCount + 1
+				needsNewRow = true
+			end
+		end
+		
+		local rowIndex = Tab.RowCount
+		if not needsNewRow and Tab.RowCount == 0 then
+			Tab.RowCount = 1
+			rowIndex = 1
 		end
 		
 		Card.LayoutOrder = rowIndex
