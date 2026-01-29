@@ -1,4 +1,4 @@
---/ 41
+--/ 4555
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -277,7 +277,7 @@ Neptune.Name = "Neptune"
 Neptune.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Neptune.ResetOnSpawn = false
 Neptune.IgnoreGuiInset = true
-Neptune.DisplayOrder = 999
+Neptune.DisplayOrder = 999999
 
 local Holder = createInstance("Frame", {
 	Name = "Holder",
@@ -1610,7 +1610,7 @@ function Library:CreateTab(name)
 				ClipsDescendants = true,
 				BorderSizePixel = 0,
 				Visible = false,
-				ZIndex = 9999
+				ZIndex = 999999
 			})
 			
 			createInstance("UICorner", {
@@ -1632,7 +1632,7 @@ function Library:CreateTab(name)
 				ScrollBarThickness = 4,
 				ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
 				BorderSizePixel = 0,
-				ZIndex = 10000,
+				ZIndex = 1000000,
 				CanvasSize = UDim2.new(0, 0, 0, 0)
 			})
 			
@@ -1692,7 +1692,7 @@ function Library:CreateTab(name)
 						TextColor3 = Color3.fromRGB(255, 255, 255),
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
-						ZIndex = 10001,
+						ZIndex = 1000001,
 						Active = true,
 						Selectable = false
 					})
@@ -1710,7 +1710,7 @@ function Library:CreateTab(name)
 						Parent = optionBtn,
 						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
 						BorderSizePixel = 0,
-						ZIndex = 10002
+						ZIndex = 1000002
 					})
 					
 					createInstance("UICorner", {
