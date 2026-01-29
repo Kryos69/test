@@ -1,4 +1,4 @@
---/ watdd
+--/ watddaaaa
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -864,42 +864,28 @@ function Library:CreateTab(name)
 	Tab.Button = tabButton
 	
 	tabButton.MouseButton1Click:Connect(function()
-		-- Hide all tabs and reset their colors with tween
+		-- Hide all tabs and reset their colors
 		for _, otherTab in pairs(Library.Tabs) do
 			for _, card in pairs(otherTab.Cards) do
 				if card.Wrapper then
-					-- Fade out animation
-					createTween(card.Wrapper, {
-						BackgroundTransparency = 1
-					}, 0.2):Play()
-					
-					task.wait(0.05)
 					card.Wrapper.Visible = false
 				end
 			end
 			-- Smooth color transition for tab buttons
-			createTween(otherTab.Button, {BackgroundColor3 = Color3.fromRGB(25, 25, 28)}, 0.3):Play()
+			if otherTab ~= Tab then
+				createTween(otherTab.Button, {BackgroundColor3 = Color3.fromRGB(25, 25, 28)}, 0.2):Play()
+			end
 		end
 		
-		-- Show current tab with animation
-		task.wait(0.1)
-		for i, card in pairs(Tab.Cards) do
+		-- Show current tab
+		for _, card in pairs(Tab.Cards) do
 			if card.Wrapper then
 				card.Wrapper.Visible = true
-				card.Wrapper.BackgroundTransparency = 1
-				
-				-- Stagger the fade-in animation for each card
-				task.spawn(function()
-					task.wait(i * 0.05)
-					createTween(card.Wrapper, {
-						BackgroundTransparency = 1
-					}, 0.3):Play()
-				end)
 			end
 		end
 		
 		-- Smooth color transition for selected tab
-		createTween(tabButton, {BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.3):Play()
+		createTween(tabButton, {BackgroundColor3 = Color3.fromRGB(69, 94, 255)}, 0.2):Play()
 		Library.CurrentTab = Tab
 	end)
 	
@@ -1068,7 +1054,7 @@ function Library:CreateTab(name)
 				CornerRadius = UDim.new(0, 5)
 			})
 			
-			createInstance("TextLabel", {
+			local toggleLabel = createInstance("TextLabel", {
 				Position = UDim2.new(0, 40, 0.5, 0),
 				AnchorPoint = Vector2.new(0, 0.5),
 				Size = UDim2.new(0, 270, 0, 36),
@@ -1080,7 +1066,9 @@ function Library:CreateTab(name)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextColor3 = Color3.fromRGB(255, 255, 255),
 				BorderSizePixel = 0,
-				ZIndex = 1
+				ZIndex = 1,
+				Active = false,
+				Selectable = false
 			})
 			
 			local isToggled = default
