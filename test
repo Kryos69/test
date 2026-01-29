@@ -1,5 +1,8 @@
---/ 41212411
+--// WATCH YOURSELF MADE TS FOR LAZY DEV -- NAMELESS
 
+
+
+-- dd
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
@@ -72,7 +75,7 @@ Library.ConfigFolder = "NeptuneConfigs"
 Library.ConfigData = {}
 Library.ConfigCallbacks = {}
 
--- Check if file functions exist
+-- // if they dont have a file system ban them from the discord server 
 local hasFileSystem = false
 pcall(function()
 	if isfolder and makefolder and writefile and readfile and delfile and listfiles then
@@ -80,7 +83,7 @@ pcall(function()
 	end
 end)
 
--- Config System
+-- // conffig system (yes i had to write this down cause i was crashing out)
 function Library:SaveConfig(configName)
 	if not hasFileSystem then
 		self:Notify({
@@ -477,7 +480,7 @@ local UsernameLabel = createInstance("TextLabel", {
 	Parent = PlayerHolder,
 	BackgroundTransparency = 1,
 	Font = Enum.Font.GothamMedium,
-	Text = Library.HideInfo and "**********" or LocalPlayer.Name,
+	Text = Library.HideInfo and "*************" or LocalPlayer.Name,
 	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
@@ -490,6 +493,9 @@ function Library:SetHideInfo(value)
 	UsernameLabel.Text = value and "**********" or LocalPlayer.Name
 	updatePlayerInfo()
 end
+
+
+-- // you can always connect this to luarmor/discord to get a real time but its pretty easy you lazy dev
 
 local expirationTime = "5M 5D 15H 15S"
 
@@ -1055,7 +1061,7 @@ function Library:CreateTab(name)
 	
 	createInstance("UICorner", {
 		Parent = tabButton,
-		CornerRadius = UDim.new(0, 3)
+		CornerRadius = UDim.new(0, 5)
 	})
 	
 	Tab.Container = Scroll
@@ -1833,7 +1839,7 @@ function Library:CreateTab(name)
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 	if not isOpen then return end
 
-	task.defer(function() -- LET DROPDOWN OPTIONS CLICK FIRST
+	task.defer(function()
 		if not isOpen then return end
 
 		local mousePos = UserInputService:GetMouseLocation()
