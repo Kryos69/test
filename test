@@ -1,4 +1,4 @@
---/ watdd123123
+--/ watdd61631
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -72,8 +72,21 @@ Library.ConfigFolder = "NeptuneConfigs"
 Library.ConfigData = {}
 Library.ConfigCallbacks = {}
 
+-- Check if file functions exist
+local hasFileSystem = pcall(function() return isfolder and makefolder and writefile and readfile and delfile and listfiles end)
+
 -- Config System
 function Library:SaveConfig(configName)
+	if not hasFileSystem then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Your executor doesn't support file system",
+			Duration = 3
+		})
+		return false
+	end
+	
 	if not configName or configName == "" then
 		self:Notify({
 			Type = "Error",
@@ -85,6 +98,9 @@ function Library:SaveConfig(configName)
 	end
 	
 	local success = pcall(function()
+		if not isfolder(self.ConfigFolder) then
+			makefolder(self.ConfigFolder)
+		end
 		local data = game:GetService("HttpService"):JSONEncode(self.ConfigData)
 		writefile(self.ConfigFolder .. "/" .. configName .. ".json", data)
 	end)
@@ -98,10 +114,6 @@ function Library:SaveConfig(configName)
 		})
 		return true
 	else
-		if not isfolder(self.ConfigFolder) then
-			makefolder(self.ConfigFolder)
-			return self:SaveConfig(configName)
-		end
 		self:Notify({
 			Type = "Error",
 			Title = "Config Error",
@@ -113,7 +125,17 @@ function Library:SaveConfig(configName)
 end
 
 function Library:LoadConfig(configName)
-	if not configName or configName == "" then
+	if not hasFileSystem then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Your executor doesn't support file system",
+			Duration = 3
+		})
+		return false
+	end
+	
+	if not configName or configName == "" or configName == "No configs" then
 		self:Notify({
 			Type = "Error",
 			Title = "Config Error",
@@ -129,7 +151,7 @@ function Library:LoadConfig(configName)
 		
 		for key, value in pairs(decoded) do
 			if self.ConfigCallbacks[key] then
-				self.ConfigCallbacks[key](value)
+				self.ConfigCallbacks[key](value, true)
 			end
 			self.ConfigData[key] = value
 		end
@@ -155,7 +177,17 @@ function Library:LoadConfig(configName)
 end
 
 function Library:DeleteConfig(configName)
-	if not configName or configName == "" then
+	if not hasFileSystem then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Your executor doesn't support file system",
+			Duration = 3
+		})
+		return false
+	end
+	
+	if not configName or configName == "" or configName == "No configs" then
 		self:Notify({
 			Type = "Error",
 			Title = "Config Error",
@@ -189,24 +221,43 @@ function Library:DeleteConfig(configName)
 end
 
 function Library:GetConfigs()
-	if not isfolder(self.ConfigFolder) then
-		makefolder(self.ConfigFolder)
+	if not hasFileSystem then
 		return {}
 	end
 	
-	local configs = {}
-	for _, file in ipairs(listfiles(self.ConfigFolder)) do
-		local name = file:gsub(self.ConfigFolder .. "/", ""):gsub(".json", "")
-		table.insert(configs, name)
+	local success, result = pcall(function()
+		if not isfolder(self.ConfigFolder) then
+			makefolder(self.ConfigFolder)
+			return {}
+		end
+		
+		local configs = {}
+		local files = listfiles(self.ConfigFolder)
+		for _, file in ipairs(files) do
+			local name = file:gsub(self.ConfigFolder .. "\\", ""):gsub(self.ConfigFolder .. "/", ""):gsub(".json", "")
+			table.insert(configs, name)
+		end
+		return configs
+	end)
+	
+	if success and result then
+		return result
+	else
+		return {}
 	end
-	return configs
 end
 
 function Library:AutoLoadConfig()
+	if not hasFileSystem then
+		return false
+	end
+	
 	local configs = self:GetConfigs()
 	if #configs > 0 then
 		self:LoadConfig(configs[1])
+		return true
 	end
+	return false
 end
 
 function Library:SetConfigValue(key, value, callback)
