@@ -1,4 +1,4 @@
---/ watddgaga
+--/ watdd123123
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -1522,6 +1522,316 @@ function Library:CreateTab(name)
 			local default = options.Default or list[1] or ""
 			local callback = options.Callback or function() end
 			local flag = options.Flag -- Config save key
+			
+			local frame = createInstance("Frame", {
+				Name = "Dropdown",
+				Size = UDim2.new(0, 320, 0, 36),
+				Parent = mainHolder,
+				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+				BorderSizePixel = 0,
+				ZIndex = 50
+			})
+			
+			createInstance("UICorner", {
+				Parent = frame,
+				CornerRadius = UDim.new(0, 4)
+			})
+			
+			local button = createInstance("TextButton", {
+				Position = UDim2.new(0, 10, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(1, -20, 0, 26),
+				Parent = frame,
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamMedium,
+				Text = default,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				AutoButtonColor = false,
+				BorderSizePixel = 0,
+				ZIndex = 51,
+				Active = false,
+				Selectable = false
+			})
+			
+			local arrow = createInstance("ImageLabel", {
+				Position = UDim2.new(1, -25, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(0, 16, 0, 16),
+				Parent = button,
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://134116754541554",
+				Rotation = 180,
+				ZIndex = 51
+			})
+			
+			-- Enhanced dropdown content
+			local dropContent = createInstance("Frame", {
+				Position = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 320, 0, 0),
+				Parent = Neptune,
+				BackgroundColor3 = Color3.fromRGB(21, 21, 23),
+				ClipsDescendants = true,
+				BorderSizePixel = 0,
+				Visible = false,
+				ZIndex = 200
+			})
+			
+			createInstance("UICorner", {
+				Parent = dropContent,
+				CornerRadius = UDim.new(0, 8)
+			})
+			
+			local scrollFrame = createInstance("ScrollingFrame", {
+				Size = UDim2.new(1, 0, 1, 0),
+				Parent = dropContent,
+				BackgroundTransparency = 1,
+				ScrollBarThickness = 4,
+				ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
+				BorderSizePixel = 0,
+				ZIndex = 201,
+				CanvasSize = UDim2.new(0, 0, 0, 0)
+			})
+			
+			local listLayout = createInstance("UIListLayout", {
+				Parent = scrollFrame,
+				Padding = UDim.new(0, 4),
+				FillDirection = Enum.FillDirection.Vertical,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
+				SortOrder = Enum.SortOrder.LayoutOrder
+			})
+			
+			createInstance("UIPadding", {
+				Parent = scrollFrame,
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
+				PaddingLeft = UDim.new(0, 8),
+				PaddingRight = UDim.new(0, 8)
+			})
+			
+			listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 16)
+			end)
+			
+			local currentValue = default
+			local isOpen = false
+			local updateConnection
+			
+			local function updateDropdown(value, skipCallback)
+				button.Text = value
+				currentValue = value
+				if flag then
+					Library:SetConfigValue(flag, value, updateDropdown)
+				end
+				if not skipCallback then
+					callback(value)
+				end
+			end
+			
+			local function createOptions()
+				for _, child in pairs(scrollFrame:GetChildren()) do
+					if child:IsA("TextButton") then
+						child:Destroy()
+					end
+				end
+				
+				for _, option in ipairs(list) do
+					local optionBtn = createInstance("TextButton", {
+						Size = UDim2.new(1, -16, 0, 36),
+						Parent = scrollFrame,
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+						BackgroundTransparency = 1,
+						Font = Enum.Font.GothamMedium,
+						Text = option,
+						TextSize = 13,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						AutoButtonColor = false,
+						BorderSizePixel = 0,
+						ZIndex = 201,
+						Active = true,
+						Selectable = false
+					})
+					
+					createInstance("UICorner", {
+						Parent = optionBtn,
+						CornerRadius = UDim.new(0, 6)
+					})
+					
+					-- Add highlight indicator
+					local highlight = createInstance("Frame", {
+						Name = "Highlight",
+						Position = UDim2.new(0, 3, 0.5, 0),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Size = UDim2.new(0, 0, 0, 24),
+						Parent = optionBtn,
+						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
+						BorderSizePixel = 0,
+						ZIndex = 202
+					})
+					
+					createInstance("UICorner", {
+						Parent = highlight,
+						CornerRadius = UDim.new(1, 0)
+					})
+					
+					optionBtn.MouseEnter:Connect(function()
+						createTween(optionBtn, {
+							BackgroundTransparency = 0,
+							BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 3, 0, 24)
+						}, 0.15):Play()
+					end)
+					
+					optionBtn.MouseLeave:Connect(function()
+						createTween(optionBtn, {
+							BackgroundTransparency = 1
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 0, 0, 24)
+						}, 0.15):Play()
+					end)
+					
+					optionBtn.MouseButton1Click:Connect(function()
+						-- Click animation
+						createTween(optionBtn, {
+							BackgroundColor3 = Color3.fromRGB(69, 94, 255)
+						}, 0.1):Play()
+						
+						updateDropdown(option, false)
+						isOpen = false
+						if updateConnection then
+							updateConnection:Disconnect()
+							updateConnection = nil
+						end
+						
+						task.wait(0.1)
+						
+						-- Smooth close animation
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						
+						task.wait(0.2)
+						dropContent.Visible = false
+					end)
+				end
+			end
+			
+			createOptions()
+			
+			local function updateDropdownPosition()
+				local framePos = frame.AbsolutePosition
+				local frameSize = frame.AbsoluteSize
+				-- Position dropdown directly below the button
+				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 4)
+			end
+			
+			-- Hover effect for main button
+			frame.MouseEnter:Connect(function()
+				if not isOpen then
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+					}, 0.2):Play()
+				end
+			end)
+			
+			frame.MouseLeave:Connect(function()
+				if not isOpen then
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+					}, 0.2):Play()
+				end
+			end)
+			
+			button.MouseButton1Click:Connect(function()
+				if isOpen then
+					isOpen = false
+					if updateConnection then
+						updateConnection:Disconnect()
+						updateConnection = nil
+					end
+					
+					-- Smooth close animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, 0)
+					}, 0.2):Play()
+					createTween(arrow, {Rotation = 180}, 0.2):Play()
+					
+					task.wait(0.2)
+					dropContent.Visible = false
+				else
+					isOpen = true
+					local contentHeight = math.min(#list * 40 + 16, 250)
+					updateDropdownPosition()
+					dropContent.Visible = true
+					dropContent.Size = UDim2.new(0, 320, 0, 0)
+					
+					-- Smooth open animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, contentHeight)
+					}, 0.25):Play()
+					createTween(arrow, {Rotation = 0}, 0.25):Play()
+					
+					if updateConnection then
+						updateConnection:Disconnect()
+					end
+					updateConnection = game:GetService("RunService").Heartbeat:Connect(updateDropdownPosition)
+				end
+			end)
+			
+			UserInputService.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 and isOpen then
+					local mousePos = UserInputService:GetMouseLocation()
+					local dropPos = dropContent.AbsolutePosition
+					local dropSize = dropContent.AbsoluteSize
+					local buttonPos = frame.AbsolutePosition
+					local buttonSize = frame.AbsoluteSize
+					
+					local inDropdown = mousePos.X >= dropPos.X and mousePos.X <= dropPos.X + dropSize.X and
+					                   mousePos.Y >= dropPos.Y and mousePos.Y <= dropPos.Y + dropSize.Y
+					
+					local inButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+					                 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+					
+					if not inDropdown and not inButton then
+						isOpen = false
+						if updateConnection then
+							updateConnection:Disconnect()
+							updateConnection = nil
+						end
+						
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						
+						task.wait(0.2)
+						dropContent.Visible = false
+					end
+				end
+			end)
+			
+			if flag then
+				Library:SetConfigValue(flag, default, updateDropdown)
+			end
+			
+			return {
+				Set = function(value)
+					updateDropdown(value, false)
+				end,
+				Refresh = function(newList)
+					list = newList
+					createOptions()
+				end
+			}
+		end
+		
 			
 			local frame = createInstance("Frame", {
 				Name = "Dropdown",
