@@ -1,4 +1,4 @@
---/ watddaaaa
+--/ watdd11111
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -68,6 +68,153 @@ Library.CurrentTab = nil
 Library.NotificationPosition = "BottomRight"
 Library.HideInfo = false
 Library.ToggleKey = Enum.KeyCode.RightShift
+Library.ConfigFolder = "NeptuneConfigs"
+Library.ConfigData = {}
+Library.ConfigCallbacks = {}
+
+-- Config System
+function Library:SaveConfig(configName)
+	if not configName or configName == "" then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Please enter a config name",
+			Duration = 3
+		})
+		return false
+	end
+	
+	local success = pcall(function()
+		local data = game:GetService("HttpService"):JSONEncode(self.ConfigData)
+		writefile(self.ConfigFolder .. "/" .. configName .. ".json", data)
+	end)
+	
+	if success then
+		self:Notify({
+			Type = "Success",
+			Title = "Config Saved",
+			Description = "Config '" .. configName .. "' saved successfully",
+			Duration = 2
+		})
+		return true
+	else
+		if not isfolder(self.ConfigFolder) then
+			makefolder(self.ConfigFolder)
+			return self:SaveConfig(configName)
+		end
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Failed to save config",
+			Duration = 3
+		})
+		return false
+	end
+end
+
+function Library:LoadConfig(configName)
+	if not configName or configName == "" then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Please select a config to load",
+			Duration = 3
+		})
+		return false
+	end
+	
+	local success = pcall(function()
+		local data = readfile(self.ConfigFolder .. "/" .. configName .. ".json")
+		local decoded = game:GetService("HttpService"):JSONDecode(data)
+		
+		for key, value in pairs(decoded) do
+			if self.ConfigCallbacks[key] then
+				self.ConfigCallbacks[key](value)
+			end
+			self.ConfigData[key] = value
+		end
+	end)
+	
+	if success then
+		self:Notify({
+			Type = "Success",
+			Title = "Config Loaded",
+			Description = "Config '" .. configName .. "' loaded successfully",
+			Duration = 2
+		})
+		return true
+	else
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Failed to load config",
+			Duration = 3
+		})
+		return false
+	end
+end
+
+function Library:DeleteConfig(configName)
+	if not configName or configName == "" then
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Please select a config to delete",
+			Duration = 3
+		})
+		return false
+	end
+	
+	local success = pcall(function()
+		delfile(self.ConfigFolder .. "/" .. configName .. ".json")
+	end)
+	
+	if success then
+		self:Notify({
+			Type = "Success",
+			Title = "Config Deleted",
+			Description = "Config '" .. configName .. "' deleted successfully",
+			Duration = 2
+		})
+		return true
+	else
+		self:Notify({
+			Type = "Error",
+			Title = "Config Error",
+			Description = "Failed to delete config",
+			Duration = 3
+		})
+		return false
+	end
+end
+
+function Library:GetConfigs()
+	if not isfolder(self.ConfigFolder) then
+		makefolder(self.ConfigFolder)
+		return {}
+	end
+	
+	local configs = {}
+	for _, file in ipairs(listfiles(self.ConfigFolder)) do
+		local name = file:gsub(self.ConfigFolder .. "/", ""):gsub(".json", "")
+		table.insert(configs, name)
+	end
+	return configs
+end
+
+function Library:AutoLoadConfig()
+	local configs = self:GetConfigs()
+	if #configs > 0 then
+		self:LoadConfig(configs[1])
+	end
+end
+
+function Library:SetConfigValue(key, value, callback)
+	self.ConfigData[key] = value
+	if callback then
+		self.ConfigCallbacks[key] = callback
+	end
+end
 
 local Neptune = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 Neptune.Name = "Neptune"
@@ -1023,10 +1170,96 @@ function Library:CreateTab(name)
 		Card.Holder = mainHolder
 		Card.Wrapper = rowWrapper
 		
+		-- Config Card Creator
+		function Card:CreateConfigSystem()
+			local configName = ""
+			local selectedConfig = ""
+			local configDropdown
+			
+			-- Config Name Input
+			local nameBox = self:AddTextBox({
+				Name = "Config Name",
+				Placeholder = "Enter config name...",
+				Default = "",
+				Callback = function(text)
+					configName = text
+				end
+			})
+			
+			-- Save Button
+			self:AddButton({
+				Name = "💾 Save Config",
+				Callback = function()
+					if Library:SaveConfig(configName) then
+						-- Refresh dropdown
+						if configDropdown then
+							configDropdown.Refresh(Library:GetConfigs())
+						end
+					end
+				end
+			})
+			
+			-- Load Config Dropdown
+			configDropdown = self:AddDropdown({
+				Name = "Load Config",
+				List = Library:GetConfigs(),
+				Default = Library:GetConfigs()[1] or "No configs",
+				Callback = function(value)
+					selectedConfig = value
+				end
+			})
+			
+			-- Load Button
+			self:AddButton({
+				Name = "📂 Load Config",
+				Callback = function()
+					if Library:LoadConfig(selectedConfig) then
+						Library:Notify({
+							Type = "Success",
+							Title = "Loaded!",
+							Description = "Config loaded successfully",
+							Duration = 2
+						})
+					end
+				end
+			})
+			
+			-- Delete Button
+			self:AddButton({
+				Name = "🗑️ Delete Config",
+				Callback = function()
+					if Library:DeleteConfig(selectedConfig) then
+						configDropdown.Refresh(Library:GetConfigs())
+					end
+				end
+			})
+			
+			-- Refresh Button
+			self:AddButton({
+				Name = "🔄 Refresh List",
+				Callback = function()
+					configDropdown.Refresh(Library:GetConfigs())
+					Library:Notify({
+						Type = "Notification",
+						Title = "Refreshed",
+						Description = "Config list updated",
+						Duration = 1.5
+					})
+				end
+			})
+			
+			return {
+				Refresh = function()
+					configDropdown.Refresh(Library:GetConfigs())
+				end
+			}
+		end
+		
 		function Card:AddToggle(options)
 			local name = options.Name or "Toggle"
 			local default = options.Default or false
 			local callback = options.Callback or function() end
+			local flag = options.Flag -- Config save key
 			
 			local frame = createInstance("Frame", {
 				Name = "Toggle",
@@ -1072,19 +1305,30 @@ function Library:CreateTab(name)
 			})
 			
 			local isToggled = default
-			toggle.MouseButton1Click:Connect(function()
-				isToggled = not isToggled
+			
+			local function updateToggle(value, skipCallback)
+				isToggled = value
 				local newColor = isToggled and Color3.fromRGB(69, 94, 255) or Color3.fromRGB(25, 25, 28)
-				createTween(toggle, {BackgroundColor3 = newColor}, 0.2):Play()
-				callback(isToggled)
+				toggle.BackgroundColor3 = newColor
+				if flag then
+					Library:SetConfigValue(flag, value, updateToggle)
+				end
+				if not skipCallback then
+					callback(isToggled)
+				end
+			end
+			
+			toggle.MouseButton1Click:Connect(function()
+				updateToggle(not isToggled)
 			end)
+			
+			if flag then
+				Library:SetConfigValue(flag, default, updateToggle)
+			end
 			
 			return {
 				Set = function(value)
-					isToggled = value
-					local newColor = isToggled and Color3.fromRGB(69, 94, 255) or Color3.fromRGB(25, 25, 28)
-					toggle.BackgroundColor3 = newColor
-					callback(isToggled)
+					updateToggle(value, false)
 				end
 			}
 		end
@@ -1259,14 +1503,6 @@ function Library:CreateTab(name)
 				CornerRadius = UDim.new(0, 4)
 			})
 			
-			-- Add subtle glow effect
-			local glowStroke = createInstance("UIStroke", {
-				Parent = frame,
-				Color = Color3.fromRGB(69, 94, 255),
-				Thickness = 0,
-				Transparency = 1
-			})
-			
 			local button = createInstance("TextButton", {
 				Position = UDim2.new(0, 10, 0.5, 0),
 				AnchorPoint = Vector2.new(0, 0.5),
@@ -1280,7 +1516,9 @@ function Library:CreateTab(name)
 				TextColor3 = Color3.fromRGB(255, 255, 255),
 				AutoButtonColor = false,
 				BorderSizePixel = 0,
-				ZIndex = 51
+				ZIndex = 51,
+				Active = false,
+				Selectable = false
 			})
 			
 			local arrow = createInstance("ImageLabel", {
@@ -1294,7 +1532,7 @@ function Library:CreateTab(name)
 				ZIndex = 51
 			})
 			
-			-- Enhanced dropdown content with shadow effect
+			-- Enhanced dropdown content
 			local dropContent = createInstance("Frame", {
 				Position = UDim2.new(0, 0, 0, 0),
 				Size = UDim2.new(0, 320, 0, 0),
@@ -1309,29 +1547,6 @@ function Library:CreateTab(name)
 			createInstance("UICorner", {
 				Parent = dropContent,
 				CornerRadius = UDim.new(0, 8)
-			})
-			
-			-- Enhanced stroke with gradient-like effect
-			createInstance("UIStroke", {
-				Parent = dropContent,
-				Color = Color3.fromRGB(69, 94, 255),
-				Thickness = 2,
-				Transparency = 0.3
-			})
-			
-			-- Add a subtle shadow effect
-			local shadow = createInstance("ImageLabel", {
-				Name = "Shadow",
-				Position = UDim2.new(0, -15, 0, -15),
-				Size = UDim2.new(1, 30, 1, 30),
-				Parent = dropContent,
-				BackgroundTransparency = 1,
-				Image = "rbxassetid://5554236805",
-				ImageColor3 = Color3.fromRGB(0, 0, 0),
-				ImageTransparency = 0.5,
-				ScaleType = Enum.ScaleType.Slice,
-				SliceCenter = Rect.new(23, 23, 277, 277),
-				ZIndex = 199
 			})
 			
 			local scrollFrame = createInstance("ScrollingFrame", {
@@ -1386,7 +1601,9 @@ function Library:CreateTab(name)
 						TextColor3 = Color3.fromRGB(255, 255, 255),
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
-						ZIndex = 201
+						ZIndex = 201,
+						Active = false,
+						Selectable = false
 					})
 					
 					createInstance("UICorner", {
@@ -1449,10 +1666,6 @@ function Library:CreateTab(name)
 							Size = UDim2.new(0, 320, 0, 0)
 						}, 0.2):Play()
 						createTween(arrow, {Rotation = 180}, 0.2):Play()
-						createTween(glowStroke, {
-							Thickness = 0,
-							Transparency = 1
-						}, 0.2):Play()
 						
 						task.wait(0.2)
 						dropContent.Visible = false
@@ -1469,24 +1682,23 @@ function Library:CreateTab(name)
 			local function updateDropdownPosition()
 				local framePos = frame.AbsolutePosition
 				local frameSize = frame.AbsoluteSize
-				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 5)
+				-- Position dropdown directly below the button
+				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 4)
 			end
 			
 			-- Hover effect for main button
 			frame.MouseEnter:Connect(function()
 				if not isOpen then
-					createTween(glowStroke, {
-						Thickness = 1,
-						Transparency = 0.7
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(30, 30, 33)
 					}, 0.2):Play()
 				end
 			end)
 			
 			frame.MouseLeave:Connect(function()
 				if not isOpen then
-					createTween(glowStroke, {
-						Thickness = 0,
-						Transparency = 1
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 					}, 0.2):Play()
 				end
 			end)
@@ -1504,10 +1716,6 @@ function Library:CreateTab(name)
 						Size = UDim2.new(0, 320, 0, 0)
 					}, 0.2):Play()
 					createTween(arrow, {Rotation = 180}, 0.2):Play()
-					createTween(glowStroke, {
-						Thickness = 0,
-						Transparency = 1
-					}, 0.2):Play()
 					
 					task.wait(0.2)
 					dropContent.Visible = false
@@ -1521,12 +1729,8 @@ function Library:CreateTab(name)
 					-- Smooth open animation
 					createTween(dropContent, {
 						Size = UDim2.new(0, 320, 0, contentHeight)
-					}, 0.3):Play()
-					createTween(arrow, {Rotation = 0}, 0.3):Play()
-					createTween(glowStroke, {
-						Thickness = 2,
-						Transparency = 0.3
-					}, 0.3):Play()
+					}, 0.25):Play()
+					createTween(arrow, {Rotation = 0}, 0.25):Play()
 					
 					if updateConnection then
 						updateConnection:Disconnect()
@@ -1560,10 +1764,6 @@ function Library:CreateTab(name)
 							Size = UDim2.new(0, 320, 0, 0)
 						}, 0.2):Play()
 						createTween(arrow, {Rotation = 180}, 0.2):Play()
-						createTween(glowStroke, {
-							Thickness = 0,
-							Transparency = 1
-						}, 0.2):Play()
 						
 						task.wait(0.2)
 						dropContent.Visible = false
@@ -1738,19 +1938,14 @@ function Library:CreateTab(name)
 				TextColor3 = Color3.fromRGB(255, 255, 255),
 				AutoButtonColor = false,
 				BorderSizePixel = 0,
-				ZIndex = 1
+				ZIndex = 1,
+				Active = false,
+				Selectable = false
 			})
 			
 			createInstance("UICorner", {
 				Parent = keybindButton,
 				CornerRadius = UDim.new(0, 5)
-			})
-			
-			createInstance("UIStroke", {
-				Parent = keybindButton,
-				Color = Color3.fromRGB(69, 94, 255),
-				Thickness = 1,
-				Transparency = 0.5
 			})
 			
 			local currentKey = default
@@ -1831,19 +2026,14 @@ function Library:CreateTab(name)
 				PlaceholderColor3 = Color3.fromRGB(120, 120, 120),
 				ClearTextOnFocus = false,
 				BorderSizePixel = 0,
-				ZIndex = 1
+				ZIndex = 1,
+				Active = false,
+				Selectable = false
 			})
 			
 			createInstance("UICorner", {
 				Parent = textBox,
 				CornerRadius = UDim.new(0, 5)
-			})
-			
-			createInstance("UIStroke", {
-				Parent = textBox,
-				Color = Color3.fromRGB(45, 45, 48),
-				Thickness = 1,
-				Transparency = 0.5
 			})
 			
 			createInstance("UIPadding", {
