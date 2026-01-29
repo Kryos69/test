@@ -1,4 +1,4 @@
---/ watdd - Fixed Version
+--/ 67
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -1640,14 +1640,14 @@ function Library:CreateTab(name)
 			
 			createInstance("UIPadding", {
 				Parent = scrollFrame,
-				PaddingTop = UDim.new(0, 10),
-				PaddingBottom = UDim.new(0, 10),
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10)
 			})
 			
 			listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-				scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 20)
+				scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 16)
 			end)
 			
 			local currentValue = default
@@ -1759,7 +1759,9 @@ function Library:CreateTab(name)
 			local function updateDropdownPosition()
 				local framePos = frame.AbsolutePosition
 				local frameSize = frame.AbsoluteSize
-				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 4)
+				local xPos = framePos.X
+				local yPos = framePos.Y + frameSize.Y + 5
+				dropContent.Position = UDim2.new(0, xPos, 0, yPos)
 			end
 			
 			frame.MouseEnter:Connect(function()
@@ -1795,7 +1797,13 @@ function Library:CreateTab(name)
 					dropContent.Visible = false
 				else
 					isOpen = true
-					local contentHeight = math.min(#list * 50 + 20, 300)
+					local itemCount = #list
+					local itemHeight = 44
+					local spacing = 6
+					local totalItemsHeight = (itemHeight * itemCount) + (spacing * (itemCount - 1))
+					local paddingHeight = 16
+					local contentHeight = math.min(totalItemsHeight + paddingHeight, 300)
+					
 					updateDropdownPosition()
 					dropContent.Visible = true
 					dropContent.Size = UDim2.new(0, 320, 0, 0)
