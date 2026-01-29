@@ -1,4 +1,4 @@
---/ watdd11111
+--/ watddgaga
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -1188,57 +1188,82 @@ function Library:CreateTab(name)
 			
 			-- Save Button
 			self:AddButton({
-				Name = "💾 Save Config",
+				Name = "Save Config",
 				Callback = function()
 					if Library:SaveConfig(configName) then
 						-- Refresh dropdown
 						if configDropdown then
-							configDropdown.Refresh(Library:GetConfigs())
+							local configs = Library:GetConfigs()
+							if #configs > 0 then
+								configDropdown.Refresh(configs)
+								configDropdown.Set(configs[1])
+								selectedConfig = configs[1]
+							end
 						end
 					end
 				end
 			})
 			
 			-- Load Config Dropdown
+			local initialConfigs = Library:GetConfigs()
 			configDropdown = self:AddDropdown({
-				Name = "Load Config",
-				List = Library:GetConfigs(),
-				Default = Library:GetConfigs()[1] or "No configs",
+				Name = "Select Config",
+				List = #initialConfigs > 0 and initialConfigs or {"No configs"},
+				Default = initialConfigs[1] or "No configs",
 				Callback = function(value)
 					selectedConfig = value
 				end
 			})
 			
+			if #initialConfigs > 0 then
+				selectedConfig = initialConfigs[1]
+			end
+			
 			-- Load Button
 			self:AddButton({
-				Name = "📂 Load Config",
+				Name = "Load Config",
 				Callback = function()
-					if Library:LoadConfig(selectedConfig) then
-						Library:Notify({
-							Type = "Success",
-							Title = "Loaded!",
-							Description = "Config loaded successfully",
-							Duration = 2
-						})
+					if selectedConfig and selectedConfig ~= "No configs" then
+						Library:LoadConfig(selectedConfig)
 					end
 				end
 			})
 			
 			-- Delete Button
 			self:AddButton({
-				Name = "🗑️ Delete Config",
+				Name = "Delete Config",
 				Callback = function()
-					if Library:DeleteConfig(selectedConfig) then
-						configDropdown.Refresh(Library:GetConfigs())
+					if selectedConfig and selectedConfig ~= "No configs" then
+						if Library:DeleteConfig(selectedConfig) then
+							local configs = Library:GetConfigs()
+							if #configs > 0 then
+								configDropdown.Refresh(configs)
+								configDropdown.Set(configs[1])
+								selectedConfig = configs[1]
+							else
+								configDropdown.Refresh({"No configs"})
+								configDropdown.Set("No configs")
+								selectedConfig = ""
+							end
+						end
 					end
 				end
 			})
 			
 			-- Refresh Button
 			self:AddButton({
-				Name = "🔄 Refresh List",
+				Name = "Refresh List",
 				Callback = function()
-					configDropdown.Refresh(Library:GetConfigs())
+					local configs = Library:GetConfigs()
+					if #configs > 0 then
+						configDropdown.Refresh(configs)
+						configDropdown.Set(configs[1])
+						selectedConfig = configs[1]
+					else
+						configDropdown.Refresh({"No configs"})
+						configDropdown.Set("No configs")
+						selectedConfig = ""
+					end
 					Library:Notify({
 						Type = "Notification",
 						Title = "Refreshed",
@@ -1250,7 +1275,12 @@ function Library:CreateTab(name)
 			
 			return {
 				Refresh = function()
-					configDropdown.Refresh(Library:GetConfigs())
+					local configs = Library:GetConfigs()
+					if #configs > 0 then
+						configDropdown.Refresh(configs)
+					else
+						configDropdown.Refresh({"No configs"})
+					end
 				end
 			}
 		end
@@ -1339,6 +1369,7 @@ function Library:CreateTab(name)
 			local max = options.Max or 100
 			local default = options.Default or 50
 			local callback = options.Callback or function() end
+			local flag = options.Flag -- Config save key
 			
 			local frame = createInstance("Frame", {
 				Name = "Slider",
@@ -1430,6 +1461,22 @@ function Library:CreateTab(name)
 			local currentValue = default
 			local dragging = false
 			
+			local function updateSlider(value, skipCallback)
+				value = math.clamp(value, min, max)
+				currentValue = value
+				valueBox.Text = tostring(value)
+				local relativePos = (value - min) / (max - min)
+				dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
+				fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
+				
+				if flag then
+					Library:SetConfigValue(flag, value, updateSlider)
+				end
+				if not skipCallback then
+					callback(value)
+				end
+			end
+			
 			dragger.MouseButton1Down:Connect(function()
 				dragging = true
 			end)
@@ -1444,46 +1491,347 @@ function Library:CreateTab(name)
 				if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 					local mousePos = UserInputService:GetMouseLocation()
 					local relativePos = math.clamp((mousePos.X - holderBar.AbsolutePosition.X) / holderBar.AbsoluteSize.X, 0, 1)
-					
-					currentValue = math.floor(min + (max - min) * relativePos)
-					valueBox.Text = tostring(currentValue)
-					
-					dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
-					fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
-					
-					callback(currentValue)
+					local value = math.floor(min + (max - min) * relativePos)
+					updateSlider(value, false)
 				end
 			end)
 			
 			valueBox.FocusLost:Connect(function()
 				local newVal = tonumber(valueBox.Text)
 				if newVal then
-					newVal = math.clamp(newVal, min, max)
-					currentValue = newVal
-					valueBox.Text = tostring(newVal)
-					local relativePos = (newVal - min) / (max - min)
-					dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
-					fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
-					callback(newVal)
+					updateSlider(newVal, false)
 				else
 					valueBox.Text = tostring(currentValue)
 				end
 			end)
 			
+			if flag then
+				Library:SetConfigValue(flag, default, updateSlider)
+			end
+			
 			return {
 				Set = function(value)
-					value = math.clamp(value, min, max)
-					currentValue = value
-					valueBox.Text = tostring(value)
-					local relativePos = (value - min) / (max - min)
-					dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
-					fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
-					callback(value)
+					updateSlider(value, false)
 				end
 			}
 		end
 		
 		function Card:AddDropdown(options)
+			local name = options.Name or "Dropdown"
+			local list = options.List or {}
+			local default = options.Default or list[1] or ""
+			local callback = options.Callback or function() end
+			local flag = options.Flag -- Config save key
+			
+			local frame = createInstance("Frame", {
+				Name = "Dropdown",
+				Size = UDim2.new(0, 320, 0, 36),
+				Parent = mainHolder,
+				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+				BorderSizePixel = 0,
+				ZIndex = 50
+			})
+			
+			createInstance("UICorner", {
+				Parent = frame,
+				CornerRadius = UDim.new(0, 4)
+			})
+			
+			local button = createInstance("TextButton", {
+				Position = UDim2.new(0, 10, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(1, -20, 0, 26),
+				Parent = frame,
+				BackgroundTransparency = 1,
+				Font = Enum.Font.GothamMedium,
+				Text = default,
+				TextSize = 14,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				AutoButtonColor = false,
+				BorderSizePixel = 0,
+				ZIndex = 51,
+				Active = false,
+				Selectable = false
+			})
+			
+			local arrow = createInstance("ImageLabel", {
+				Position = UDim2.new(1, -25, 0.5, 0),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Size = UDim2.new(0, 16, 0, 16),
+				Parent = button,
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://134116754541554",
+				Rotation = 180,
+				ZIndex = 51
+			})
+			
+			-- Enhanced dropdown content
+			local dropContent = createInstance("Frame", {
+				Position = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 320, 0, 0),
+				Parent = Neptune,
+				BackgroundColor3 = Color3.fromRGB(21, 21, 23),
+				ClipsDescendants = true,
+				BorderSizePixel = 0,
+				Visible = false,
+				ZIndex = 200
+			})
+			
+			createInstance("UICorner", {
+				Parent = dropContent,
+				CornerRadius = UDim.new(0, 8)
+			})
+			
+			local scrollFrame = createInstance("ScrollingFrame", {
+				Size = UDim2.new(1, 0, 1, 0),
+				Parent = dropContent,
+				BackgroundTransparency = 1,
+				ScrollBarThickness = 4,
+				ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
+				BorderSizePixel = 0,
+				ZIndex = 201,
+				CanvasSize = UDim2.new(0, 0, 0, 0)
+			})
+			
+			local listLayout = createInstance("UIListLayout", {
+				Parent = scrollFrame,
+				Padding = UDim.new(0, 4),
+				FillDirection = Enum.FillDirection.Vertical,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
+				SortOrder = Enum.SortOrder.LayoutOrder
+			})
+			
+			createInstance("UIPadding", {
+				Parent = scrollFrame,
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
+				PaddingLeft = UDim.new(0, 8),
+				PaddingRight = UDim.new(0, 8)
+			})
+			
+			listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				scrollFrame.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 16)
+			end)
+			
+			local currentValue = default
+			
+			local function updateDropdown(value, skipCallback)
+				button.Text = value
+				currentValue = value
+				if flag then
+					Library:SetConfigValue(flag, value, updateDropdown)
+				end
+				if not skipCallback then
+					callback(value)
+				end
+			end
+			
+			local function createOptions()
+				for _, child in pairs(scrollFrame:GetChildren()) do
+					if child:IsA("TextButton") then
+						child:Destroy()
+					end
+				end
+				
+				for _, option in ipairs(list) do
+					local optionBtn = createInstance("TextButton", {
+						Size = UDim2.new(1, -16, 0, 36),
+						Parent = scrollFrame,
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+						BackgroundTransparency = 1,
+						Font = Enum.Font.GothamMedium,
+						Text = option,
+						TextSize = 13,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextColor3 = Color3.fromRGB(255, 255, 255),
+						AutoButtonColor = false,
+						BorderSizePixel = 0,
+						ZIndex = 201,
+						Active = true,
+						Selectable = false
+					})
+					
+					createInstance("UICorner", {
+						Parent = optionBtn,
+						CornerRadius = UDim.new(0, 6)
+					})
+					
+					-- Add highlight indicator
+					local highlight = createInstance("Frame", {
+						Name = "Highlight",
+						Position = UDim2.new(0, 3, 0.5, 0),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Size = UDim2.new(0, 0, 0, 24),
+						Parent = optionBtn,
+						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
+						BorderSizePixel = 0,
+						ZIndex = 202
+					})
+					
+					createInstance("UICorner", {
+						Parent = highlight,
+						CornerRadius = UDim.new(1, 0)
+					})
+					
+					optionBtn.MouseEnter:Connect(function()
+						createTween(optionBtn, {
+							BackgroundTransparency = 0,
+							BackgroundColor3 = Color3.fromRGB(35, 35, 38)
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 3, 0, 24)
+						}, 0.15):Play()
+					end)
+					
+					optionBtn.MouseLeave:Connect(function()
+						createTween(optionBtn, {
+							BackgroundTransparency = 1
+						}, 0.15):Play()
+						createTween(highlight, {
+							Size = UDim2.new(0, 0, 0, 24)
+						}, 0.15):Play()
+					end)
+					
+					optionBtn.MouseButton1Click:Connect(function()
+						-- Click animation
+						createTween(optionBtn, {
+							BackgroundColor3 = Color3.fromRGB(69, 94, 255)
+						}, 0.1):Play()
+						
+						updateDropdown(option, false)
+						isOpen = false
+						if updateConnection then
+							updateConnection:Disconnect()
+							updateConnection = nil
+						end
+						
+						task.wait(0.1)
+						
+						-- Smooth close animation
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						
+						task.wait(0.2)
+						dropContent.Visible = false
+					end)
+				end
+			end
+			
+			createOptions()
+			
+			local isOpen = false
+			local updateConnection
+			
+			local function updateDropdownPosition()
+				local framePos = frame.AbsolutePosition
+				local frameSize = frame.AbsoluteSize
+				-- Position dropdown directly below the button
+				dropContent.Position = UDim2.new(0, framePos.X, 0, framePos.Y + frameSize.Y + 4)
+			end
+			
+			-- Hover effect for main button
+			frame.MouseEnter:Connect(function()
+				if not isOpen then
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(30, 30, 33)
+					}, 0.2):Play()
+				end
+			end)
+			
+			frame.MouseLeave:Connect(function()
+				if not isOpen then
+					createTween(frame, {
+						BackgroundColor3 = Color3.fromRGB(25, 25, 28)
+					}, 0.2):Play()
+				end
+			end)
+			
+			button.MouseButton1Click:Connect(function()
+				if isOpen then
+					isOpen = false
+					if updateConnection then
+						updateConnection:Disconnect()
+						updateConnection = nil
+					end
+					
+					-- Smooth close animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, 0)
+					}, 0.2):Play()
+					createTween(arrow, {Rotation = 180}, 0.2):Play()
+					
+					task.wait(0.2)
+					dropContent.Visible = false
+				else
+					isOpen = true
+					local contentHeight = math.min(#list * 40 + 16, 250)
+					updateDropdownPosition()
+					dropContent.Visible = true
+					dropContent.Size = UDim2.new(0, 320, 0, 0)
+					
+					-- Smooth open animation
+					createTween(dropContent, {
+						Size = UDim2.new(0, 320, 0, contentHeight)
+					}, 0.25):Play()
+					createTween(arrow, {Rotation = 0}, 0.25):Play()
+					
+					if updateConnection then
+						updateConnection:Disconnect()
+					end
+					updateConnection = game:GetService("RunService").Heartbeat:Connect(updateDropdownPosition)
+				end
+			end)
+			
+			UserInputService.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 and isOpen then
+					local mousePos = UserInputService:GetMouseLocation()
+					local dropPos = dropContent.AbsolutePosition
+					local dropSize = dropContent.AbsoluteSize
+					local buttonPos = frame.AbsolutePosition
+					local buttonSize = frame.AbsoluteSize
+					
+					local inDropdown = mousePos.X >= dropPos.X and mousePos.X <= dropPos.X + dropSize.X and
+					                   mousePos.Y >= dropPos.Y and mousePos.Y <= dropPos.Y + dropSize.Y
+					
+					local inButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+					                 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+					
+					if not inDropdown and not inButton then
+						isOpen = false
+						if updateConnection then
+							updateConnection:Disconnect()
+							updateConnection = nil
+						end
+						
+						createTween(dropContent, {
+							Size = UDim2.new(0, 320, 0, 0)
+						}, 0.2):Play()
+						createTween(arrow, {Rotation = 180}, 0.2):Play()
+						
+						task.wait(0.2)
+						dropContent.Visible = false
+					end
+				end
+			end)
+			
+			if flag then
+				Library:SetConfigValue(flag, default, updateDropdown)
+			end
+			
+			return {
+				Set = function(value)
+					updateDropdown(value, false)
+				end,
+				Refresh = function(newList)
+					list = newList
+					createOptions()
+				end
+			}
+		end
 			local name = options.Name or "Dropdown"
 			local list = options.List or {}
 			local default = options.Default or list[1] or ""
@@ -1590,7 +1938,7 @@ function Library:CreateTab(name)
 				
 				for _, option in ipairs(list) do
 					local optionBtn = createInstance("TextButton", {
-						Size = UDim2.new(1, -16, 0, 32),
+						Size = UDim2.new(1, -16, 0, 36),
 						Parent = scrollFrame,
 						BackgroundColor3 = Color3.fromRGB(25, 25, 28),
 						BackgroundTransparency = 1,
@@ -1602,7 +1950,7 @@ function Library:CreateTab(name)
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
 						ZIndex = 201,
-						Active = false,
+						Active = true,
 						Selectable = false
 					})
 					
@@ -1616,7 +1964,7 @@ function Library:CreateTab(name)
 						Name = "Highlight",
 						Position = UDim2.new(0, 3, 0.5, 0),
 						AnchorPoint = Vector2.new(0, 0.5),
-						Size = UDim2.new(0, 0, 0, 20),
+						Size = UDim2.new(0, 0, 0, 24),
 						Parent = optionBtn,
 						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
 						BorderSizePixel = 0,
@@ -1634,7 +1982,7 @@ function Library:CreateTab(name)
 							BackgroundColor3 = Color3.fromRGB(35, 35, 38)
 						}, 0.15):Play()
 						createTween(highlight, {
-							Size = UDim2.new(0, 3, 0, 20)
+							Size = UDim2.new(0, 3, 0, 24)
 						}, 0.15):Play()
 					end)
 					
@@ -1643,7 +1991,7 @@ function Library:CreateTab(name)
 							BackgroundTransparency = 1
 						}, 0.15):Play()
 						createTween(highlight, {
-							Size = UDim2.new(0, 0, 0, 20)
+							Size = UDim2.new(0, 0, 0, 24)
 						}, 0.15):Play()
 					end)
 					
@@ -1652,7 +2000,6 @@ function Library:CreateTab(name)
 						createTween(optionBtn, {
 							BackgroundColor3 = Color3.fromRGB(69, 94, 255)
 						}, 0.1):Play()
-						task.wait(0.15)
 						
 						button.Text = option
 						isOpen = false
@@ -1660,6 +2007,8 @@ function Library:CreateTab(name)
 							updateConnection:Disconnect()
 							updateConnection = nil
 						end
+						
+						task.wait(0.1)
 						
 						-- Smooth close animation
 						createTween(dropContent, {
@@ -1787,6 +2136,7 @@ function Library:CreateTab(name)
 			local name = options.Name or "Color Picker"
 			local default = options.Default or Color3.fromRGB(255, 0, 0)
 			local callback = options.Callback or function() end
+			local flag = options.Flag -- Config save key
 			
 			local frame = createInstance("Frame", {
 				Name = "ColorPicker",
@@ -1829,12 +2179,27 @@ function Library:CreateTab(name)
 				ZIndex = 1
 			})
 			
+			local function updateColor(color, skipCallback)
+				colorButton.BackgroundColor3 = color
+				if flag then
+					-- Save color as table {R, G, B}
+					Library:SetConfigValue(flag, {color.R, color.G, color.B}, function(colorData)
+						if colorData and type(colorData) == "table" then
+							local loadedColor = Color3.new(colorData[1], colorData[2], colorData[3])
+							updateColor(loadedColor, true)
+						end
+					end)
+				end
+				if not skipCallback then
+					callback(color)
+				end
+			end
+			
 			colorButton.MouseButton1Click:Connect(function()
 				ColorPickerFrame.Visible = not ColorPickerFrame.Visible
 				
 				currentCallback = function(color)
-					colorButton.BackgroundColor3 = color
-					callback(color)
+					updateColor(color, false)
 				end
 				
 				local h, s, v = default:ToHSV()
@@ -1851,10 +2216,18 @@ function Library:CreateTab(name)
 				Colorview.BackgroundColor3 = hueColor
 			end)
 			
+			if flag then
+				Library:SetConfigValue(flag, {default.R, default.G, default.B}, function(colorData)
+					if colorData and type(colorData) == "table" then
+						local loadedColor = Color3.new(colorData[1], colorData[2], colorData[3])
+						updateColor(loadedColor, true)
+					end
+				end)
+			end
+			
 			return {
 				Set = function(color)
-					colorButton.BackgroundColor3 = color
-					callback(color)
+					updateColor(color, false)
 				end
 			}
 		end
