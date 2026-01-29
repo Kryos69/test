@@ -1,4 +1,4 @@
---/ 4555
+--/ 455111111115
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -1681,20 +1681,20 @@ function Library:CreateTab(name)
 				
 				for _, option in ipairs(list) do
 					local optionBtn = createInstance("TextButton", {
-						Size = UDim2.new(1, -20, 0, 44),
+						Size = UDim2.new(1, -20, 0, 36),
 						Parent = scrollFrame,
 						BackgroundColor3 = Color3.fromRGB(25, 25, 28),
 						BackgroundTransparency = 0,
 						Font = Enum.Font.GothamMedium,
 						Text = option,
-						TextSize = 14,
+						TextSize = 13,
 						TextXAlignment = Enum.TextXAlignment.Center,
 						TextColor3 = Color3.fromRGB(255, 255, 255),
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
 						ZIndex = 1000001,
 						Active = true,
-						Selectable = false
+						Selectable = true
 					})
 					
 					createInstance("UICorner", {
@@ -1706,7 +1706,7 @@ function Library:CreateTab(name)
 						Name = "Highlight",
 						Position = UDim2.new(0, 5, 0.5, 0),
 						AnchorPoint = Vector2.new(0, 0.5),
-						Size = UDim2.new(0, 0, 0, 30),
+						Size = UDim2.new(0, 0, 0, 24),
 						Parent = optionBtn,
 						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
 						BorderSizePixel = 0,
@@ -1723,7 +1723,7 @@ function Library:CreateTab(name)
 							BackgroundColor3 = Color3.fromRGB(35, 35, 38)
 						}, 0.15):Play()
 						createTween(highlight, {
-							Size = UDim2.new(0, 4, 0, 30)
+							Size = UDim2.new(0, 4, 0, 24)
 						}, 0.15):Play()
 					end)
 					
@@ -1732,7 +1732,7 @@ function Library:CreateTab(name)
 							BackgroundColor3 = Color3.fromRGB(25, 25, 28)
 						}, 0.15):Play()
 						createTween(highlight, {
-							Size = UDim2.new(0, 0, 0, 30)
+							Size = UDim2.new(0, 0, 0, 24)
 						}, 0.15):Play()
 					end)
 					
@@ -1742,13 +1742,14 @@ function Library:CreateTab(name)
 						}, 0.1):Play()
 						
 						updateDropdown(option, false)
+						
+						task.wait(0.1)
+						
 						isOpen = false
 						if updateConnection then
 							updateConnection:Disconnect()
 							updateConnection = nil
 						end
-						
-						task.wait(0.1)
 						
 						createTween(dropContent, {
 							Size = UDim2.new(0, 320, 0, 0)
@@ -1805,7 +1806,7 @@ function Library:CreateTab(name)
 				else
 					isOpen = true
 					local itemCount = #list
-					local itemHeight = 44
+					local itemHeight = 36
 					local spacing = 6
 					local totalItemsHeight = (itemHeight * itemCount) + (spacing * (itemCount - 1))
 					local paddingHeight = 16
