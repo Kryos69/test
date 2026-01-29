@@ -1,4 +1,4 @@
---/ 67
+--/ 41
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -277,6 +277,7 @@ Neptune.Name = "Neptune"
 Neptune.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Neptune.ResetOnSpawn = false
 Neptune.IgnoreGuiInset = true
+Neptune.DisplayOrder = 999
 
 local Holder = createInstance("Frame", {
 	Name = "Holder",
@@ -430,20 +431,26 @@ local thumbSize = Enum.ThumbnailSize.Size48x48
 
 local function updatePlayerInfo()
 	if Library.HideInfo then
-		PlayerIcon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-		if not PlayerIcon:FindFirstChild("Blur") then
-			local blur = Instance.new("ImageLabel")
-			blur.Name = "Blur"
-			blur.Size = UDim2.new(1, 0, 1, 0)
-			blur.BackgroundTransparency = 1
-			blur.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-			blur.ImageTransparency = 0.3
-			blur.ZIndex = 5
-			blur.Parent = PlayerIcon
-			
-			local blurCorner = Instance.new("UICorner")
-			blurCorner.CornerRadius = UDim.new(1, 0)
-			blurCorner.Parent = blur
+		local randomDecalId = nil
+		local decalFound = false
+		
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("Decal") and obj.Texture ~= "" then
+				randomDecalId = obj.Texture
+				decalFound = true
+				break
+			end
+		end
+		
+		if decalFound and randomDecalId then
+			PlayerIcon.Image = randomDecalId
+		else
+			warn("no decal found")
+			PlayerIcon.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+		end
+		
+		if PlayerIcon:FindFirstChild("Blur") then
+			PlayerIcon.Blur:Destroy()
 		end
 	else
 		pcall(function()
@@ -470,7 +477,7 @@ local UsernameLabel = createInstance("TextLabel", {
 	Parent = PlayerHolder,
 	BackgroundTransparency = 1,
 	Font = Enum.Font.GothamMedium,
-	Text = Library.HideInfo and "*****" or LocalPlayer.Name,
+	Text = Library.HideInfo and "**********" or LocalPlayer.Name,
 	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
@@ -480,7 +487,7 @@ local UsernameLabel = createInstance("TextLabel", {
 
 function Library:SetHideInfo(value)
 	self.HideInfo = value
-	UsernameLabel.Text = value and "*****" or LocalPlayer.Name
+	UsernameLabel.Text = value and "**********" or LocalPlayer.Name
 	updatePlayerInfo()
 end
 
@@ -1603,7 +1610,7 @@ function Library:CreateTab(name)
 				ClipsDescendants = true,
 				BorderSizePixel = 0,
 				Visible = false,
-				ZIndex = 250
+				ZIndex = 9999
 			})
 			
 			createInstance("UICorner", {
@@ -1625,7 +1632,7 @@ function Library:CreateTab(name)
 				ScrollBarThickness = 4,
 				ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
 				BorderSizePixel = 0,
-				ZIndex = 251,
+				ZIndex = 10000,
 				CanvasSize = UDim2.new(0, 0, 0, 0)
 			})
 			
@@ -1685,7 +1692,7 @@ function Library:CreateTab(name)
 						TextColor3 = Color3.fromRGB(255, 255, 255),
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
-						ZIndex = 251,
+						ZIndex = 10001,
 						Active = true,
 						Selectable = false
 					})
@@ -1703,7 +1710,7 @@ function Library:CreateTab(name)
 						Parent = optionBtn,
 						BackgroundColor3 = Color3.fromRGB(69, 94, 255),
 						BorderSizePixel = 0,
-						ZIndex = 252
+						ZIndex = 10002
 					})
 					
 					createInstance("UICorner", {
