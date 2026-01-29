@@ -1,4 +1,4 @@
---/ watdd61631
+--/ 43214231
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -73,7 +73,12 @@ Library.ConfigData = {}
 Library.ConfigCallbacks = {}
 
 -- Check if file functions exist
-local hasFileSystem = pcall(function() return isfolder and makefolder and writefile and readfile and delfile and listfiles end)
+local hasFileSystem = false
+pcall(function()
+	if isfolder and makefolder and writefile and readfile and delfile and listfiles then
+		hasFileSystem = true
+	end
+end)
 
 -- Config System
 function Library:SaveConfig(configName)
