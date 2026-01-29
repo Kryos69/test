@@ -1,4 +1,4 @@
---/ 455111111115
+--/ 41212411
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -277,7 +277,7 @@ Neptune.Name = "Neptune"
 Neptune.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Neptune.ResetOnSpawn = false
 Neptune.IgnoreGuiInset = true
-Neptune.DisplayOrder = 999999
+
 
 local Holder = createInstance("Frame", {
 	Name = "Holder",
@@ -1828,37 +1828,47 @@ function Library:CreateTab(name)
 				end
 			end)
 			
-			UserInputService.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 and isOpen then
-					local mousePos = UserInputService:GetMouseLocation()
-					local dropPos = dropContent.AbsolutePosition
-					local dropSize = dropContent.AbsoluteSize
-					local buttonPos = frame.AbsolutePosition
-					local buttonSize = frame.AbsoluteSize
-					
-					local inDropdown = mousePos.X >= dropPos.X and mousePos.X <= dropPos.X + dropSize.X and
-					                   mousePos.Y >= dropPos.Y and mousePos.Y <= dropPos.Y + dropSize.Y
-					
-					local inButton = mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
-					                 mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
-					
-					if not inDropdown and not inButton then
-						isOpen = false
-						if updateConnection then
-							updateConnection:Disconnect()
-							updateConnection = nil
-						end
-						
-						createTween(dropContent, {
-							Size = UDim2.new(0, 320, 0, 0)
-						}, 0.2):Play()
-						createTween(arrow, {Rotation = 180}, 0.2):Play()
-						
-						task.wait(0.2)
-						dropContent.Visible = false
-					end
-				end
-			end)
+			UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	if not isOpen then return end
+
+	task.defer(function() -- LET DROPDOWN OPTIONS CLICK FIRST
+		if not isOpen then return end
+
+		local mousePos = UserInputService:GetMouseLocation()
+		local dropPos = dropContent.AbsolutePosition
+		local dropSize = dropContent.AbsoluteSize
+		local buttonPos = frame.AbsolutePosition
+		local buttonSize = frame.AbsoluteSize
+		
+		local inDropdown =
+			mousePos.X >= dropPos.X and mousePos.X <= dropPos.X + dropSize.X and
+			mousePos.Y >= dropPos.Y and mousePos.Y <= dropPos.Y + dropSize.Y
+		
+		local inButton =
+			mousePos.X >= buttonPos.X and mousePos.X <= buttonPos.X + buttonSize.X and
+			mousePos.Y >= buttonPos.Y and mousePos.Y <= buttonPos.Y + buttonSize.Y
+		
+		if not inDropdown and not inButton then
+			isOpen = false
+			if updateConnection then
+				updateConnection:Disconnect()
+				updateConnection = nil
+			end
+			
+			createTween(dropContent, {
+				Size = UDim2.new(0, 320, 0, 0)
+			}, 0.2):Play()
+
+			createTween(arrow, {Rotation = 180}, 0.2):Play()
+			
+			task.wait(0.2)
+			dropContent.Visible = false
+		end
+	end)
+end)
+
 			
 			if flag then
 				Library:SetConfigValue(flag, default, updateDropdown)
