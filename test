@@ -1,6 +1,6 @@
 --// WATCH YOURSELF MADE TS FOR LAZY DEV -- NAMELESS
 
-
+-- 1231
 
 -- // edit only below if you have a combine iq of 12
 local UserInputService = game:GetService("UserInputService")
@@ -1108,7 +1108,7 @@ function Library:CreateTab(name)
 	
 	table.insert(Library.Tabs, Tab)
 	
-function Tab:CreateCard(name, side)
+	function Tab:CreateCard(name, side)
 	local Card = {}
 	Card.Name = name
 	Card.Elements = {}
@@ -1139,8 +1139,7 @@ function Tab:CreateCard(name, side)
 
 	local cardFrame = createInstance("Frame", {
 		Name = name,
-		Size = UDim2.new(0, 347, 0, 0), -- Changed from fixed 314 to 0
-		AutomaticSize = Enum.AutomaticSize.Y, -- Added this!
+		Size = UDim2.new(0, 347, 0, 400), -- Fixed height for card
 		AnchorPoint = Card.Side == "Right" and Vector2.new(1, 0) or Vector2.new(0, 0),
 		Position = Card.Side == "Right"
 			and UDim2.new(1, 0, 0, 0)
@@ -1182,14 +1181,16 @@ function Tab:CreateCard(name, side)
 		ZIndex = 1
 	})
 	
-	-- Changed from ScrollingFrame to regular Frame
-	local mainHolder = createInstance("Frame", {
+	-- ScrollingFrame inside the card
+	local mainHolder = createInstance("ScrollingFrame", {
 		Name = "MainHolder",
 		Position = UDim2.new(0, 0, 0, 48),
-		Size = UDim2.new(0, 343, 0, 0), -- Changed to 0 height
-		AutomaticSize = Enum.AutomaticSize.Y, -- Added this!
+		Size = UDim2.new(0, 347, 1, -48), -- Fill remaining space
 		Parent = cardFrame,
 		BackgroundTransparency = 1,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Color3.fromRGB(69, 94, 255),
+		CanvasSize = UDim2.new(0, 0, 0, 0),
 		BorderSizePixel = 0,
 		ZIndex = 1
 	})
@@ -1207,10 +1208,14 @@ function Tab:CreateCard(name, side)
 		Parent = mainHolder,
 		PaddingTop = UDim.new(0, 10),
 		PaddingLeft = UDim.new(0, 10),
-		PaddingBottom = UDim.new(0, 10) -- Added bottom padding
+		PaddingBottom = UDim.new(0, 10),
+		PaddingRight = UDim.new(0, 5)
 	})
 	
-	-- Remove the canvas size update connection since we're no longer using ScrollingFrame
+	-- Update canvas size when content changes
+	holderLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		mainHolder.CanvasSize = UDim2.new(0, 0, 0, holderLayout.AbsoluteContentSize.Y + 20)
+	end)
 	
 	Card.Frame = cardFrame
 	Card.Holder = mainHolder
@@ -1402,158 +1407,171 @@ function Tab:CreateCard(name, side)
 			}
 		end
 		
-		function Card:AddSlider(options)
-			local name = options.Name or "Slider"
-			local min = options.Min or 0
-			local max = options.Max or 100
-			local default = options.Default or 50
-			local callback = options.Callback or function() end
-			local flag = options.Flag
-			
-			local frame = createInstance("Frame", {
-				Name = "Slider",
-				Size = UDim2.new(0, 320, 0, 55),
-				Parent = mainHolder,
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-			
-			createInstance("TextLabel", {
-				Position = UDim2.new(0, 5, 0, 0),
-				Size = UDim2.new(0, 200, 0, 20),
-				Parent = frame,
-				BackgroundTransparency = 1,
-				Font = Enum.Font.GothamMedium,
-				Text = name,
-				TextSize = 14,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextColor3 = Color3.fromRGB(255, 255, 255),
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-			
-			local valueBox = createInstance("TextBox", {
-				Position = UDim2.new(1, -75, 0, 0),
-				Size = UDim2.new(0, 70, 0, 20),
-				Parent = frame,
-				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
-				Font = Enum.Font.Gotham,
-				Text = tostring(default),
-				TextSize = 13,
-				TextXAlignment = Enum.TextXAlignment.Center,
-				TextColor3 = Color3.fromRGB(255, 255, 255),
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-			
-			createInstance("UICorner", {
-				Parent = valueBox,
-				CornerRadius = UDim.new(0, 4)
-			})
-			
-			local holderBar = createInstance("Frame", {
-				Position = UDim2.new(0, 5, 0, 30),
-				Size = UDim2.new(1, -10, 0, 12),
-				Parent = frame,
-				BackgroundColor3 = Color3.fromRGB(25, 25, 28),
-				BorderSizePixel = 0,
-				ZIndex = 1
-			})
-			
-			createInstance("UICorner", {
-				Parent = holderBar,
-				CornerRadius = UDim.new(0, 5)
-			})
-			
-			local fillBar = createInstance("Frame", {
-				Position = UDim2.new(0, 0, 0, 0),
-				Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
-				Parent = holderBar,
-				BackgroundColor3 = Color3.fromRGB(69, 94, 255),
-				BorderSizePixel = 0,
-				ZIndex = 3
-			})
-			
-			createInstance("UICorner", {
-				Parent = fillBar,
-				CornerRadius = UDim.new(0, 5)
-			})
-			
-			local dragger = createInstance("TextButton", {
-				Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0),
-				Size = UDim2.new(0, 10, 0, 22),
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Parent = holderBar,
-				Text = '',
-				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-				AutoButtonColor = false,
-				BorderSizePixel = 0,
-				ZIndex = 4
-			})
-			
-			createInstance("UICorner", {
-				Parent = dragger,
-				CornerRadius = UDim.new(0, 5)
-			})
-			
-			local currentValue = default
-			local dragging = false
-			
-			local function updateSlider(value, skipCallback)
-				value = math.clamp(value, min, max)
-				currentValue = value
-				valueBox.Text = tostring(value)
-				local relativePos = (value - min) / (max - min)
-				dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
-				fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
-				
-				if flag then
-					Library:SetConfigValue(flag, value, updateSlider)
-				end
-				if not skipCallback then
-					callback(value)
-				end
-			end
-			
-			dragger.MouseButton1Down:Connect(function()
-				dragging = true
-			end)
-			
-			UserInputService.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					dragging = false
-				end
-			end)
-			
-			UserInputService.InputChanged:Connect(function(input)
-				if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-					local mousePos = UserInputService:GetMouseLocation()
-					local relativePos = math.clamp((mousePos.X - holderBar.AbsolutePosition.X) / holderBar.AbsoluteSize.X, 0, 1)
-					local value = math.floor(min + (max - min) * relativePos)
-					updateSlider(value, false)
-				end
-			end)
-			
-			valueBox.FocusLost:Connect(function()
-				local newVal = tonumber(valueBox.Text)
-				if newVal then
-					updateSlider(newVal, false)
-				else
-					valueBox.Text = tostring(currentValue)
-				end
-			end)
-			
-			if flag then
-				Library:SetConfigValue(flag, default, updateSlider)
-			end
-			
-			return {
-				Set = function(value)
-					updateSlider(value, false)
-				end
-			}
+		-- Replace the entire AddSlider function with this:
+function Card:AddSlider(options)
+	local name = options.Name or "Slider"
+	local min = options.Min or 0
+	local max = options.Max or 100
+	local default = options.Default or 50
+	local decimals = options.Decimals or 0
+	local callback = options.Callback or function() end
+	local flag = options.Flag
+	
+	local frame = createInstance("Frame", {
+		Name = "Slider",
+		Size = UDim2.new(0, 320, 0, 55),
+		Parent = mainHolder,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 1
+	})
+	
+	createInstance("TextLabel", {
+		Position = UDim2.new(0, 5, 0, 0),
+		Size = UDim2.new(0, 200, 0, 20),
+		Parent = frame,
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamMedium,
+		Text = name,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		BorderSizePixel = 0,
+		ZIndex = 1
+	})
+	
+	local valueBox = createInstance("TextBox", {
+		Position = UDim2.new(1, -75, 0, 0),
+		Size = UDim2.new(0, 70, 0, 20),
+		Parent = frame,
+		BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+		Font = Enum.Font.Gotham,
+		Text = string.format("%." .. decimals .. "f", default),
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		BorderSizePixel = 0,
+		ZIndex = 1
+	})
+	
+	createInstance("UICorner", {
+		Parent = valueBox,
+		CornerRadius = UDim.new(0, 4)
+	})
+	
+	local holderBar = createInstance("Frame", {
+		Position = UDim2.new(0, 5, 0, 30),
+		Size = UDim2.new(1, -10, 0, 12),
+		Parent = frame,
+		BackgroundColor3 = Color3.fromRGB(25, 25, 28),
+		BorderSizePixel = 0,
+		ZIndex = 1
+	})
+	
+	createInstance("UICorner", {
+		Parent = holderBar,
+		CornerRadius = UDim.new(0, 5)
+	})
+	
+	local fillBar = createInstance("Frame", {
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+		Parent = holderBar,
+		BackgroundColor3 = Color3.fromRGB(69, 94, 255),
+		BorderSizePixel = 0,
+		ZIndex = 3
+	})
+	
+	createInstance("UICorner", {
+		Parent = fillBar,
+		CornerRadius = UDim.new(0, 5)
+	})
+	
+	local dragger = createInstance("TextButton", {
+		Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0),
+		Size = UDim2.new(0, 10, 0, 22),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Parent = holderBar,
+		Text = '',
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		AutoButtonColor = false,
+		BorderSizePixel = 0,
+		ZIndex = 4
+	})
+	
+	createInstance("UICorner", {
+		Parent = dragger,
+		CornerRadius = UDim.new(0, 5)
+	})
+	
+	local currentValue = default
+	local dragging = false
+	
+	-- Round value based on decimal places
+	local function roundValue(value)
+		if decimals == 0 then
+			return math.floor(value + 0.5)
+		else
+			local mult = 10 ^ decimals
+			return math.floor(value * mult + 0.5) / mult
 		end
+	end
+	
+	local function updateSlider(value, skipCallback)
+		value = math.clamp(value, min, max)
+		value = roundValue(value)
+		currentValue = value
+		valueBox.Text = string.format("%." .. decimals .. "f", value)
+		local relativePos = (value - min) / (max - min)
+		dragger.Position = UDim2.new(relativePos, 0, 0.5, 0)
+		fillBar.Size = UDim2.new(relativePos, 0, 1, 0)
+		
+		if flag then
+			Library:SetConfigValue(flag, value, updateSlider)
+		end
+		if not skipCallback then
+			callback(value)
+		end
+	end
+	
+	dragger.MouseButton1Down:Connect(function()
+		dragging = true
+	end)
+	
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+	
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local mousePos = UserInputService:GetMouseLocation()
+			local relativePos = math.clamp((mousePos.X - holderBar.AbsolutePosition.X) / holderBar.AbsoluteSize.X, 0, 1)
+			local value = min + (max - min) * relativePos
+			updateSlider(value, false)
+		end
+	end)
+	
+	valueBox.FocusLost:Connect(function()
+		local newVal = tonumber(valueBox.Text)
+		if newVal then
+			updateSlider(newVal, false)
+		else
+			valueBox.Text = string.format("%." .. decimals .. "f", currentValue)
+		end
+	end)
+	
+	if flag then
+		Library:SetConfigValue(flag, default, updateSlider)
+	end
+	
+	return {
+		Set = function(value)
+			updateSlider(value, false)
+		end
+	}
+end
 		
 		function Card:AddDropdown(options)
 			local name = options.Name or "Dropdown"
