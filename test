@@ -1,1 +1,890 @@
-dd
+-- Spare UI Library
+-- Based on the original Spare design
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local Library = {}
+Library.__index = Library
+
+-- Utility function to create instances
+local function createInstance(className, properties)
+    local instance = Instance.new(className)
+    for k, v in pairs(properties) do
+        if typeof(k) ~= 'string' then
+            continue
+        end
+        instance[k] = v
+    end
+    return instance
+end
+
+-- Tween utility
+local function tween(object, properties, duration)
+    duration = duration or 0.2
+    local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(object, tweenInfo, properties)
+    tween:Play()
+    return tween
+end
+
+-- Create a new window
+function Library:CreateWindow(config)
+    config = config or {}
+    local window = {}
+    
+    -- Main ScreenGui
+    local Spare_stack = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
+    Spare_stack.Name = config.Name or "SpareUI"
+    Spare_stack.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    Spare_stack.ResetOnSpawn = false
+    
+    -- Background
+    local Background = createInstance("ImageLabel", {
+        Name = "Background",
+        Position = UDim2.new(0.5, 0, 0.5, 0),
+        Size = UDim2.new(0, 1011, 0, 630),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Parent = Spare_stack,
+        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://71105506054247",
+        BorderSizePixel = 0,
+        ZIndex = 0
+    })
+    
+    local UIPadding = createInstance("UIPadding", {
+        Parent = Background,
+        PaddingLeft = UDim.new(0, 10)
+    })
+    
+    -- Search holder
+    local SearchHolder = createInstance("Frame", {
+        Name = "SearchHolder",
+        Position = UDim2.new(0.252, 0, 0.019, 0),
+        Size = UDim2.new(0, 198, 0, 40),
+        Parent = Background,
+        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    local Search = createInstance("TextBox", {
+        Name = "Search",
+        Position = UDim2.new(-0.001, 0, -0.006, 0),
+        Size = UDim2.new(0, 200, 0, 40),
+        Parent = SearchHolder,
+        Font = Enum.Font.SourceSansSemibold,
+        Text = '',
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Center,
+        TextColor3 = Color3.fromRGB(255, 255, 255),
+        PlaceholderText = 'Search . . .',
+        PlaceholderColor3 = Color3.fromRGB(178, 178, 178),
+        BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+        TextSize = 14,
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    createInstance("UIPadding", {
+        Parent = Search,
+        PaddingLeft = UDim.new(0, 15)
+    })
+    
+    createInstance("UICorner", {
+        Parent = Search,
+        CornerRadius = UDim.new(0, 3)
+    })
+    
+    createInstance("ImageLabel", {
+        Name = "SearchIcon",
+        Position = UDim2.new(0.805, 0, 0.300, 0),
+        Size = UDim2.new(0, 15, 0, 15),
+        Parent = Search,
+        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://105544331892424",
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    createInstance("UICorner", {
+        Parent = SearchHolder,
+        CornerRadius = UDim.new(0, 3)
+    })
+    
+    createInstance("UIStroke", {
+        Parent = SearchHolder,
+        Color = Color3.fromRGB(22, 22, 30),
+        Thickness = 2,
+        LineJoinMode = Enum.LineJoinMode.Round,
+        Transparency = 0
+    })
+    
+    -- Settings button
+    local Settings = createInstance("TextButton", {
+        Name = "Settings",
+        Position = UDim2.new(0.930, 0, 0.017, 0),
+        Size = UDim2.new(0, 45, 0, 45),
+        Parent = Background,
+        Font = Enum.Font.SourceSans,
+        Text = '',
+        BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+        TextSize = 14,
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    createInstance("UICorner", {
+        Parent = Settings,
+        CornerRadius = UDim.new(0, 3)
+    })
+    
+    createInstance("ImageButton", {
+        Name = "Image",
+        Position = UDim2.new(0.256, 0, 0.284, 0),
+        Size = UDim2.new(0, 20, 0, 20),
+        Parent = Settings,
+        BackgroundTransparency = 1,
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://70543102142774",
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    local uistroke = createInstance("Frame", {
+        Name = "uistroke",
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(0, 45, 0, 45),
+        Parent = Settings,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    createInstance("UIStroke", {
+        Parent = uistroke,
+        Color = Color3.fromRGB(22, 22, 30),
+        Thickness = 2,
+        LineJoinMode = Enum.LineJoinMode.Round,
+        Transparency = 0
+    })
+    
+    createInstance("UICorner", {
+        Parent = uistroke,
+        CornerRadius = UDim.new(0, 3)
+    })
+    
+    -- Side decoration
+    createInstance("ImageLabel", {
+        Name = "SideDecoration",
+        Position = UDim2.new(0.751, 0, 0.275, 0),
+        Size = UDim2.new(0, 1011, 0, 630),
+        Parent = Spare_stack,
+        BackgroundTransparency = 1,
+        ImageColor3 = Color3.fromRGB(255, 255, 255),
+        Image = "rbxassetid://84404130442705",
+        BorderSizePixel = 0,
+        ZIndex = 0
+    })
+    
+    -- Tab holder (left or right side)
+    local tabSide = config.TabSide or "left"
+    local TabHolder = createInstance("Frame", {
+        Name = "TabHolder",
+        Position = tabSide == "right" and UDim2.new(0.751, 0, 0.13, 0) or UDim2.new(0.02, 0, 0.13, 0),
+        Size = UDim2.new(0, 200, 0, 500),
+        Parent = Background,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    createInstance("UIListLayout", {
+        Parent = TabHolder,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8)
+    })
+    
+    -- Card holder (scrolling frame)
+    local CardHolder = createInstance("ScrollingFrame", {
+        Name = "CardHolder",
+        Position = tabSide == "right" and UDim2.new(0.05, 0, 0.13, 0) or UDim2.new(0.25, 0, 0.13, 0),
+        Size = UDim2.new(0, 700, 0, 520),
+        Parent = Background,
+        BackgroundTransparency = 1,
+        ScrollBarThickness = 7,
+        ScrollBarImageColor3 = Color3.fromRGB(51, 105, 255),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ClipsDescendants = true,
+        BorderSizePixel = 0,
+        ZIndex = 1
+    })
+    
+    local CardLayout = createInstance("UIGridLayout", {
+        Parent = CardHolder,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        CellSize = UDim2.new(0, 356, 0, 337),
+        CellPadding = UDim2.new(0, 16, 0, 16),
+        FillDirectionMaxCells = 2
+    })
+    
+    -- Store tabs and categories
+    window.Tabs = {}
+    window.CurrentTab = nil
+    window.ScreenGui = Spare_stack
+    window.Background = Background
+    window.TabHolder = TabHolder
+    window.CardHolder = CardHolder
+    window.CardLayout = CardLayout
+    
+    -- Search functionality
+    Search:GetPropertyChangedSignal("Text"):Connect(function()
+        local searchText = Search.Text:lower()
+        for _, card in pairs(CardHolder:GetChildren()) do
+            if card:IsA("Frame") and card.Name ~= "UIGridLayout" then
+                local title = card:FindFirstChild("CardTitle")
+                if title then
+                    if searchText == "" or title.Text:lower():find(searchText) then
+                        card.Visible = true
+                    else
+                        card.Visible = false
+                    end
+                end
+            end
+        end
+    end)
+    
+    -- Update canvas size when cards are added
+    local function updateCanvasSize()
+        CardHolder.CanvasSize = UDim2.new(0, 0, 0, CardLayout.AbsoluteContentSize.Y + 20)
+    end
+    
+    CardLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+    
+    -- Create tab function
+    function window:CreateTab(config)
+        config = config or {}
+        local tab = {}
+        tab.Name = config.Name or "Tab"
+        tab.Icon = config.Icon or "rbxassetid://97584948400851"
+        tab.Cards = {}
+        
+        -- Tab button
+        local TabButton = createInstance("TextButton", {
+            Name = tab.Name,
+            Size = UDim2.new(1, 0, 0, 40),
+            Parent = TabHolder,
+            BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+            Font = Enum.Font.GothamSemibold,
+            Text = tab.Name,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextColor3 = Color3.fromRGB(178, 178, 178),
+            TextSize = 14,
+            BorderSizePixel = 0,
+            ZIndex = 1
+        })
+        
+        createInstance("UIPadding", {
+            Parent = TabButton,
+            PaddingLeft = UDim.new(0, 35)
+        })
+        
+        createInstance("UICorner", {
+            Parent = TabButton,
+            CornerRadius = UDim.new(0, 6)
+        })
+        
+        local TabIcon = createInstance("ImageLabel", {
+            Name = "Icon",
+            Position = UDim2.new(0, 8, 0.5, 0),
+            Size = UDim2.new(0, 18, 0, 18),
+            AnchorPoint = Vector2.new(0, 0.5),
+            Parent = TabButton,
+            BackgroundTransparency = 1,
+            ImageColor3 = Color3.fromRGB(178, 178, 178),
+            Image = tab.Icon,
+            BorderSizePixel = 0,
+            ZIndex = 1
+        })
+        
+        tab.Button = TabButton
+        tab.Icon = TabIcon
+        
+        -- Select tab function
+        local function selectTab()
+            -- Deselect all tabs
+            for _, t in pairs(window.Tabs) do
+                tween(t.Button, {BackgroundColor3 = Color3.fromRGB(20, 20, 27)})
+                tween(t.Button, {TextColor3 = Color3.fromRGB(178, 178, 178)})
+                tween(t.Icon, {ImageColor3 = Color3.fromRGB(178, 178, 178)})
+                
+                -- Hide all cards from this tab
+                for _, card in pairs(t.Cards) do
+                    card.Visible = false
+                end
+            end
+            
+            -- Select this tab
+            tween(TabButton, {BackgroundColor3 = Color3.fromRGB(51, 105, 255)})
+            tween(TabButton, {TextColor3 = Color3.fromRGB(255, 255, 255)})
+            tween(TabIcon, {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+            
+            -- Show all cards from this tab
+            for _, card in pairs(tab.Cards) do
+                card.Visible = true
+            end
+            
+            window.CurrentTab = tab
+        end
+        
+        TabButton.MouseButton1Click:Connect(selectTab)
+        
+        -- Create category function (this creates a CARD)
+        function tab:CreateCategory(config)
+            config = config or {}
+            local category = {}
+            category.Name = config.Name or "Category"
+            category.Icon = config.Icon or "rbxassetid://97584948400851"
+            category.Image = config.Image or "rbxassetid://79172856971491"
+            
+            -- Card (exact structure from original)
+            local Card = createInstance("Frame", {
+                Name = "Card",
+                Position = UDim2.new(0.250, 0, 0.090, 0),
+                Size = UDim2.new(0, 356, 0, 337),
+                Parent = CardHolder,
+                BackgroundTransparency = 1,
+                AnchorPoint = Vector2.new(0, 0),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BorderSizePixel = 0,
+                ZIndex = 1,
+                Visible = false,
+                LayoutOrder = #tab.Cards
+            })
+            
+            table.insert(tab.Cards, Card)
+            
+            -- Card Icon (top left)
+            createInstance("ImageLabel", {
+                Name = "Image",
+                Position = UDim2.new(0.045, 0, 0.045, 0),
+                Size = UDim2.new(0, 20, 0, 20),
+                Parent = Card,
+                BackgroundTransparency = 1,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ImageColor3 = Color3.fromRGB(255, 255, 255),
+                Image = category.Icon,
+                BorderSizePixel = 0,
+                ZIndex = 1
+            })
+            
+            -- Background image (main card background)
+            createInstance("ImageLabel", {
+                Name = "Background",
+                Position = UDim2.new(0, 0, 0.148, 0),
+                Size = UDim2.new(0, 356, 0, 289),
+                Parent = Card,
+                BackgroundTransparency = 1,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ImageColor3 = Color3.fromRGB(255, 255, 255),
+                Image = category.Image,
+                BorderSizePixel = 0,
+                ZIndex = 0
+            })
+            
+            -- Card Title
+            createInstance("TextLabel", {
+                Name = "CardTitle",
+                Position = UDim2.new(0.129, 0, 0, 0),
+                Size = UDim2.new(0, 310, 0, 50),
+                Parent = Card,
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
+                Text = category.Name,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Center,
+                TextColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                TextSize = 14,
+                BorderSizePixel = 0,
+                ZIndex = 1
+            })
+            
+            -- Placard (top header background)
+            createInstance("ImageLabel", {
+                Name = "Placard",
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(0, 356, 0, 50),
+                Parent = Card,
+                BackgroundTransparency = 1,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                ImageColor3 = Color3.fromRGB(255, 255, 255),
+                Image = "rbxassetid://91296368223791",
+                BorderSizePixel = 0,
+                ZIndex = 0
+            })
+            
+            category.Card = Card
+            category.ElementYOffset = 0.148 -- Start after card title
+            
+            -- Create toggle (exact structure from original)
+            function category:CreateToggle(config)
+                config = config or {}
+                local toggleState = config.Default or false
+                
+                -- Title label for the toggle
+                local Title = createInstance("TextLabel", {
+                    Name = "Title",
+                    Position = UDim2.new(0.045, 0, category.ElementYOffset, 0),
+                    Size = UDim2.new(0, 310, 0, 50),
+                    Parent = Card,
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = config.Name or "Toggle",
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                -- Settings icon (optional)
+                if config.Settings then
+                    createInstance("ImageButton", {
+                        Name = "Settings",
+                        Position = UDim2.new(0.890, 0, 0.493, 0),
+                        Size = UDim2.new(0, 15, 0, 15),
+                        Parent = Title,
+                        BackgroundTransparency = 1,
+                        AnchorPoint = Vector2.new(0.5, 0.5),
+                        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                        ImageColor3 = Color3.fromRGB(46, 46, 66),
+                        Image = "rbxassetid://70543102142774",
+                        BorderSizePixel = 0,
+                        ZIndex = 1
+                    }).MouseButton1Click:Connect(config.Settings)
+                end
+                
+                -- Toggle background
+                local ToggleBackground = createInstance("TextButton", {
+                    Name = "Background",
+                    Position = UDim2.new(0.942, 0, 0.300, 0),
+                    Size = UDim2.new(0, 35, 0, 20),
+                    Parent = Title,
+                    Font = Enum.Font.SourceSans,
+                    Text = '',
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextColor3 = Color3.fromRGB(0, 0, 0),
+                    BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(28, 48, 103),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                createInstance("UICorner", {
+                    Parent = ToggleBackground,
+                    CornerRadius = UDim.new(1, 0)
+                })
+                
+                -- Toggle orb
+                local Orb = createInstance("Frame", {
+                    Name = "Orb",
+                    Position = toggleState and UDim2.new(0.65, 0, 0.5, 0) or UDim2.new(0.35, 0, 0.5, 0),
+                    Size = UDim2.new(0, 13, 0, 13),
+                    Parent = ToggleBackground,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Font = Enum.Font.SourceSans,
+                    BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(255, 255, 255),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                createInstance("UICorner", {
+                    Parent = Orb,
+                    CornerRadius = UDim.new(1, 0)
+                })
+                
+                -- Toggle functionality
+                ToggleBackground.MouseButton1Click:Connect(function()
+                    toggleState = not toggleState
+                    
+                    tween(ToggleBackground, {
+                        BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(28, 48, 103)
+                    })
+                    
+                    tween(Orb, {
+                        Position = toggleState and UDim2.new(0.65, 0, 0.5, 0) or UDim2.new(0.35, 0, 0.5, 0),
+                        BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(255, 255, 255)
+                    })
+                    
+                    if config.Callback then
+                        config.Callback(toggleState)
+                    end
+                end)
+                
+                category.ElementYOffset = category.ElementYOffset + 0.148
+                
+                return {
+                    SetValue = function(value)
+                        toggleState = value
+                        ToggleBackground.BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(28, 48, 103)
+                        Orb.Position = toggleState and UDim2.new(0.65, 0, 0.5, 0) or UDim2.new(0.35, 0, 0.5, 0)
+                        Orb.BackgroundColor3 = toggleState and Color3.fromRGB(51, 105, 255) or Color3.fromRGB(255, 255, 255)
+                    end
+                }
+            end
+            
+            -- Create slider (exact structure from original)
+            function category:CreateSlider(config)
+                config = config or {}
+                local min = config.Min or 0
+                local max = config.Max or 100
+                local default = config.Default or min
+                local increment = config.Increment or 1
+                local currentValue = default
+                
+                -- Title label for the slider
+                local Title = createInstance("TextLabel", {
+                    Name = "Title",
+                    Position = UDim2.new(0.045, 0, category.ElementYOffset, 0),
+                    Size = UDim2.new(0, 310, 0, 50),
+                    Parent = Card,
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = config.Name or "Slider",
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                -- Bar
+                local Bar = createInstance("Frame", {
+                    Name = "Bar",
+                    Position = UDim2.new(0.523, 0, 0.908, 0),
+                    Size = UDim2.new(0, 318, 0, 9),
+                    Parent = Title,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    BackgroundColor3 = Color3.fromRGB(21, 21, 27),
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                createInstance("UICorner", {
+                    Parent = Bar
+                })
+                
+                -- Fill
+                local Fill = createInstance("Frame", {
+                    Name = "Fill",
+                    Position = UDim2.new(0, 0, 0.5, 0),
+                    Size = UDim2.new((currentValue - min) / (max - min), 0, 1, 0),
+                    Parent = Bar,
+                    AnchorPoint = Vector2.new(0, 0.5),
+                    BackgroundColor3 = Color3.fromRGB(51, 105, 255),
+                    BorderSizePixel = 0,
+                    ZIndex = 0
+                })
+                
+                createInstance("UICorner", {
+                    Parent = Fill
+                })
+                
+                -- Draggable button
+                local TextButton = createInstance("TextButton", {
+                    Name = "SliderButton",
+                    Position = UDim2.new((currentValue - min) / (max - min), 0, 0.5, 0),
+                    Size = UDim2.new(0, 21, 0, 11),
+                    Parent = Bar,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Font = Enum.Font.SourceSans,
+                    Text = '',
+                    TextXAlignment = Enum.TextXAlignment.Center,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextColor3 = Color3.fromRGB(0, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 2
+                })
+                
+                createInstance("UICorner", {
+                    Parent = TextButton,
+                    CornerRadius = UDim.new(1, 0)
+                })
+                
+                -- Slider dragging
+                local dragging = false
+                
+                TextButton.MouseButton1Down:Connect(function()
+                    dragging = true
+                end)
+                
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = false
+                    end
+                end)
+                
+                UserInputService.InputChanged:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        local mousePos = UserInputService:GetMouseLocation().X
+                        local barPos = Bar.AbsolutePosition.X
+                        local barSize = Bar.AbsoluteSize.X
+                        local relative = math.clamp((mousePos - barPos) / barSize, 0, 1)
+                        
+                        currentValue = math.floor((min + (max - min) * relative) / increment + 0.5) * increment
+                        currentValue = math.clamp(currentValue, min, max)
+                        
+                        Fill.Size = UDim2.new(relative, 0, 1, 0)
+                        TextButton.Position = UDim2.new(relative, 0, 0.5, 0)
+                        
+                        if config.Callback then
+                            config.Callback(currentValue)
+                        end
+                    end
+                end)
+                
+                category.ElementYOffset = category.ElementYOffset + 0.148
+                
+                return {
+                    SetValue = function(value)
+                        currentValue = math.clamp(value, min, max)
+                        local relative = (currentValue - min) / (max - min)
+                        Fill.Size = UDim2.new(relative, 0, 1, 0)
+                        TextButton.Position = UDim2.new(relative, 0, 0.5, 0)
+                    end
+                }
+            end
+            
+            -- Create dropdown
+            function category:CreateDropdown(config)
+                config = config or {}
+                local options = config.Options or {}
+                local currentOption = config.Default or (options[1] or "None")
+                local isOpen = false
+                
+                -- Title label for dropdown
+                local Title = createInstance("TextLabel", {
+                    Name = "DropdownTitle",
+                    Position = UDim2.new(0.045, 0, category.ElementYOffset, 0),
+                    Size = UDim2.new(0, 310, 0, 35),
+                    Parent = Card,
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = config.Name or "Dropdown",
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextYAlignment = Enum.TextYAlignment.Center,
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    TextSize = 14,
+                    BorderSizePixel = 0,
+                    ZIndex = 1
+                })
+                
+                -- Dropdown container
+                local DropdownContainer = createInstance("Frame", {
+                    Name = "DropdownContainer",
+                    Position = UDim2.new(0.045, 0, category.ElementYOffset + 0.104, 0),
+                    Size = UDim2.new(0, 310, 0, 35),
+                    Parent = Card,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    ZIndex = 1,
+                    ClipsDescendants = true
+                })
+                
+                -- Dropdown button
+                local DropdownButton = createInstance("TextButton", {
+                    Name = "Button",
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(1, 0, 0, 35),
+                    Parent = DropdownContainer,
+                    Font = Enum.Font.GothamSemibold,
+                    Text = "  " .. currentOption,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    TextColor3 = Color3.fromRGB(255, 255, 255),
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+                    TextSize = 13,
+                    BorderSizePixel = 0,
+                    ZIndex = 2
+                })
+                
+                createInstance("UICorner", {
+                    Parent = DropdownButton,
+                    CornerRadius = UDim.new(0, 4)
+                })
+                
+                -- Dropdown arrow
+                local Arrow = createInstance("TextLabel", {
+                    Name = "Arrow",
+                    Position = UDim2.new(0.92, 0, 0.5, 0),
+                    Size = UDim2.new(0, 20, 0, 20),
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Parent = DropdownButton,
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    Text = "▼",
+                    TextColor3 = Color3.fromRGB(178, 178, 178),
+                    TextSize = 10,
+                    BorderSizePixel = 0,
+                    ZIndex = 2
+                })
+                
+                -- Options container
+                local OptionsContainer = createInstance("Frame", {
+                    Name = "Options",
+                    Position = UDim2.new(0, 0, 1, 5),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Parent = DropdownContainer,
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+                    BorderSizePixel = 0,
+                    ZIndex = 3,
+                    ClipsDescendants = true
+                })
+                
+                createInstance("UICorner", {
+                    Parent = OptionsContainer,
+                    CornerRadius = UDim.new(0, 4)
+                })
+                
+                createInstance("UIListLayout", {
+                    Parent = OptionsContainer,
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, 2)
+                })
+                
+                -- Create option buttons
+                for i, option in ipairs(options) do
+                    local OptionButton = createInstance("TextButton", {
+                        Name = "Option_" .. i,
+                        Size = UDim2.new(1, 0, 0, 30),
+                        Parent = OptionsContainer,
+                        Font = Enum.Font.GothamSemibold,
+                        Text = "  " .. option,
+                        TextXAlignment = Enum.TextXAlignment.Left,
+                        TextColor3 = Color3.fromRGB(178, 178, 178),
+                        BackgroundColor3 = Color3.fromRGB(20, 20, 27),
+                        TextSize = 12,
+                        BorderSizePixel = 0,
+                        ZIndex = 3
+                    })
+                    
+                    OptionButton.MouseEnter:Connect(function()
+                        tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(51, 105, 255)})
+                        tween(OptionButton, {TextColor3 = Color3.fromRGB(255, 255, 255)})
+                    end)
+                    
+                    OptionButton.MouseLeave:Connect(function()
+                        tween(OptionButton, {BackgroundColor3 = Color3.fromRGB(20, 20, 27)})
+                        tween(OptionButton, {TextColor3 = Color3.fromRGB(178, 178, 178)})
+                    end)
+                    
+                    OptionButton.MouseButton1Click:Connect(function()
+                        currentOption = option
+                        DropdownButton.Text = "  " .. currentOption
+                        
+                        -- Close dropdown
+                        isOpen = false
+                        tween(DropdownContainer, {Size = UDim2.new(0, 310, 0, 35)}, 0.2)
+                        tween(OptionsContainer, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+                        tween(Arrow, {Rotation = 0}, 0.2)
+                        
+                        if config.Callback then
+                            config.Callback(currentOption)
+                        end
+                    end)
+                end
+                
+                -- Toggle dropdown
+                DropdownButton.MouseButton1Click:Connect(function()
+                    isOpen = not isOpen
+                    
+                    if isOpen then
+                        local optionsHeight = #options * 32
+                        tween(DropdownContainer, {Size = UDim2.new(0, 310, 0, 40 + optionsHeight)}, 0.2)
+                        tween(OptionsContainer, {Size = UDim2.new(1, 0, 0, optionsHeight)}, 0.2)
+                        tween(Arrow, {Rotation = 180}, 0.2)
+                    else
+                        tween(DropdownContainer, {Size = UDim2.new(0, 310, 0, 35)}, 0.2)
+                        tween(OptionsContainer, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
+                        tween(Arrow, {Rotation = 0}, 0.2)
+                    end
+                end)
+                
+                category.ElementYOffset = category.ElementYOffset + 0.16
+                
+                return {
+                    SetValue = function(value)
+                        if table.find(options, value) then
+                            currentOption = value
+                            DropdownButton.Text = "  " .. currentOption
+                        end
+                    end
+                }
+            end
+            
+            return category
+        end
+        
+        table.insert(window.Tabs, tab)
+        
+        -- Select first tab by default
+        if #window.Tabs == 1 then
+            selectTab()
+        end
+        
+        return tab
+    end
+    
+    -- Make window draggable
+    local dragging = false
+    local dragInput, mousePos, framePos
+    
+    Background.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = Background.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    Background.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            Background.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    return window
+end
+
+return Library
