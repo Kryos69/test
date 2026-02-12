@@ -1,5 +1,5 @@
 -- Spare UI Library
--- A modern Roblox UI library
+-- 67
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -280,12 +280,17 @@ function Library:CreateWindow(config)
             Parent = TabHolder,
             BackgroundColor3 = Color3.fromRGB(20, 20, 27),
             Font = Enum.Font.GothamSemibold,
-            Text = "  " .. tab.Name,
+            Text = tab.Name,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextColor3 = Color3.fromRGB(178, 178, 178),
             TextSize = 14,
             BorderSizePixel = 0,
             ZIndex = 1
+        })
+        
+        createInstance("UIPadding", {
+            Parent = TabButton,
+            PaddingLeft = UDim.new(0, 35)
         })
         
         createInstance("UICorner", {
@@ -295,9 +300,9 @@ function Library:CreateWindow(config)
         
         createInstance("ImageLabel", {
             Name = "Icon",
-            Position = UDim2.new(0.88, 0, 0.5, 0),
+            Position = UDim2.new(0, 8, 0.5, 0),
             Size = UDim2.new(0, 18, 0, 18),
-            AnchorPoint = Vector2.new(0.5, 0.5),
+            AnchorPoint = Vector2.new(0, 0.5),
             Parent = TabButton,
             BackgroundTransparency = 1,
             ImageColor3 = Color3.fromRGB(178, 178, 178),
@@ -963,7 +968,7 @@ function Library:CreateWindow(config)
         
         -- Select first tab by default
         if #window.Tabs == 1 then
-            TabButton.MouseButton1Click:Fire()
+            selectTab()
         end
         
         return tab
