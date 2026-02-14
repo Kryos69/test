@@ -1,5 +1,5 @@
--- SpareStack UI Library - Fixed Version
--- Proper scaling, categories, Inter font, and tab styling
+-- SpareStack UI Library - Properly Fixed
+-- Categories ABOVE tabs, vertical card scrolling, proper scaling
 
 local SpareStackLib = {}
 SpareStackLib.__index = SpareStackLib
@@ -7,6 +7,7 @@ SpareStackLib.__index = SpareStackLib
 local TweenService = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 function SpareStackLib:CreateWindow(title)
 	local self = setmetatable({}, SpareStackLib)
@@ -19,6 +20,10 @@ function SpareStackLib:CreateWindow(title)
 	Sparestack.ResetOnSpawn = false
 	Sparestack.IgnoreGuiInset = true
 	
+	-- Get screen size for proper scaling
+	local screenSize = workspace.CurrentCamera.ViewportSize
+	local scale = math.min(screenSize.X / 1920, screenSize.Y / 1080)
+	
 	-- Background
 	local Background = Instance.new("ImageLabel")
 	Background.Name = "Background"
@@ -28,14 +33,50 @@ function SpareStackLib:CreateWindow(title)
 	Background.BorderSizePixel = 0
 	Background.AnchorPoint = Vector2.new(0.5, 0.5)
 	Background.Position = UDim2.new(0.5, 0, 0.5, 0)
-	Background.Size = UDim2.new(0, 1011, 0, 630)
+	Background.Size = UDim2.new(0, 1011 * scale, 0, 630 * scale)
 	Background.ZIndex = 0
 	Background.Image = "rbxassetid://71105506054247"
 	Background.ScaleType = Enum.ScaleType.Stretch
 	
+	-- Make draggable
+	local dragging = false
+	local dragInput, mousePos, framePos
+	
+	Background.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			mousePos = input.Position
+			framePos = Background.Position
+			
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+	
+	Background.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
+	
+	UIS.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - mousePos
+			Background.Position = UDim2.new(
+				framePos.X.Scale,
+				framePos.X.Offset + delta.X,
+				framePos.Y.Scale,
+				framePos.Y.Offset + delta.Y
+			)
+		end
+	end)
+	
 	local UIPadding = Instance.new("UIPadding")
 	UIPadding.Parent = Background
-	UIPadding.PaddingLeft = UDim.new(0, 10)
+	UIPadding.PaddingLeft = UDim.new(0, 10 * scale)
 	
 	-- Search Holder
 	local SearchHolder = Instance.new("Frame")
@@ -43,7 +84,7 @@ function SpareStackLib:CreateWindow(title)
 	SearchHolder.Parent = Background
 	SearchHolder.BackgroundTransparency = 1
 	SearchHolder.Position = UDim2.new(0.252460182, 0, 0.0190476198, 0)
-	SearchHolder.Size = UDim2.new(0, 198, 0, 40)
+	SearchHolder.Size = UDim2.new(0, 198 * scale, 0, 40 * scale)
 	
 	local Search = Instance.new("TextBox")
 	Search.Name = "Search"
@@ -55,13 +96,13 @@ function SpareStackLib:CreateWindow(title)
 	Search.PlaceholderText = "Search . . ."
 	Search.Text = ""
 	Search.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Search.TextSize = 14
+	Search.TextSize = 14 * scale
 	Search.TextXAlignment = Enum.TextXAlignment.Left
 	Search.ClearTextOnFocus = false
 	
 	local SearchPadding = Instance.new("UIPadding")
 	SearchPadding.Parent = Search
-	SearchPadding.PaddingLeft = UDim.new(0, 15)
+	SearchPadding.PaddingLeft = UDim.new(0, 15 * scale)
 	
 	local SearchCorner = Instance.new("UICorner")
 	SearchCorner.CornerRadius = UDim.new(0, 3)
@@ -71,7 +112,7 @@ function SpareStackLib:CreateWindow(title)
 	SearchIcon.Parent = Search
 	SearchIcon.BackgroundTransparency = 1
 	SearchIcon.Position = UDim2.new(0.805, 0, 0.3, 0)
-	SearchIcon.Size = UDim2.new(0, 15, 0, 15)
+	SearchIcon.Size = UDim2.new(0, 15 * scale, 0, 15 * scale)
 	SearchIcon.Image = "rbxassetid://105544331892424"
 	
 	-- Settings Button
@@ -81,7 +122,7 @@ function SpareStackLib:CreateWindow(title)
 	Settings.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
 	Settings.BorderSizePixel = 0
 	Settings.Position = UDim2.new(0.93, 0, 0.017, 0)
-	Settings.Size = UDim2.new(0, 45, 0, 45)
+	Settings.Size = UDim2.new(0, 45 * scale, 0, 45 * scale)
 	Settings.Text = ""
 	
 	local SettingsCorner = Instance.new("UICorner")
@@ -92,7 +133,7 @@ function SpareStackLib:CreateWindow(title)
 	SettingsImage.Parent = Settings
 	SettingsImage.BackgroundTransparency = 1
 	SettingsImage.Position = UDim2.new(0.256, 0, 0.284, 0)
-	SettingsImage.Size = UDim2.new(0, 20, 0, 20)
+	SettingsImage.Size = UDim2.new(0, 20 * scale, 0, 20 * scale)
 	SettingsImage.Image = "rbxassetid://70543102142774"
 	
 	-- Title Image
@@ -101,17 +142,17 @@ function SpareStackLib:CreateWindow(title)
 	TitleImage.Parent = Sparestack
 	TitleImage.BackgroundTransparency = 1
 	TitleImage.Position = UDim2.new(0.278082192, 0, 0.24229452, 0)
-	TitleImage.Size = UDim2.new(0, 200, 0, 40)
+	TitleImage.Size = UDim2.new(0, 200 * scale, 0, 40 * scale)
 	TitleImage.Image = "rbxassetid://117733299243150"
 	
-	-- Side Holder (Tabs)
+	-- Side Holder (Categories and Tabs)
 	local SideHolder = Instance.new("ScrollingFrame")
 	SideHolder.Name = "SideHolder"
 	SideHolder.Parent = Sparestack
 	SideHolder.BackgroundTransparency = 1
 	SideHolder.BorderSizePixel = 0
 	SideHolder.Position = UDim2.new(0.278209239, 0, 0.303746015, 0)
-	SideHolder.Size = UDim2.new(0, 200, 0, 490)
+	SideHolder.Size = UDim2.new(0, 200 * scale, 0, 490 * scale)
 	SideHolder.ScrollBarThickness = 0
 	SideHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
 	
@@ -124,7 +165,7 @@ function SpareStackLib:CreateWindow(title)
 		SideHolder.CanvasSize = UDim2.new(0, 0, 0, SideLayout.AbsoluteContentSize.Y + 10)
 	end)
 	
-	-- Card Holder
+	-- Card Holder (VERTICAL SCROLLING)
 	local CardHolder = Instance.new("ScrollingFrame")
 	CardHolder.Name = "CardHolder"
 	CardHolder.Parent = Sparestack
@@ -132,19 +173,22 @@ function SpareStackLib:CreateWindow(title)
 	CardHolder.BackgroundTransparency = 1
 	CardHolder.BorderSizePixel = 0
 	CardHolder.Position = UDim2.new(0.385388136, 0, 0.300513685, 0)
-	CardHolder.Size = UDim2.new(0, 745, 0, 537)
+	CardHolder.Size = UDim2.new(0, 745 * scale, 0, 537 * scale)
 	CardHolder.ScrollBarThickness = 7
 	CardHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
+	CardHolder.ScrollingDirection = Enum.ScrollingDirection.Y -- VERTICAL!
 	
-	local CardLayout = Instance.new("UIListLayout")
+	local CardLayout = Instance.new("UIGridLayout")
 	CardLayout.Parent = CardHolder
-	CardLayout.FillDirection = Enum.FillDirection.Horizontal
 	CardLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	CardLayout.Padding = UDim.new(0.03, 0)
+	CardLayout.CellPadding = UDim2.new(0, 15 * scale, 0, 15 * scale)
+	CardLayout.CellSize = UDim2.new(0, 356 * scale, 0, 450 * scale)
+	CardLayout.FillDirection = Enum.FillDirection.Horizontal
 	CardLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	CardLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 	
 	CardLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		CardHolder.CanvasSize = UDim2.new(0, CardLayout.AbsoluteContentSize.X + 20, 0, 0)
+		CardHolder.CanvasSize = UDim2.new(0, 0, 0, CardLayout.AbsoluteContentSize.Y + 20)
 	end)
 	
 	self.Gui = Sparestack
@@ -152,10 +196,13 @@ function SpareStackLib:CreateWindow(title)
 	self.SideHolder = SideHolder
 	self.CardHolder = CardHolder
 	self.SearchBox = Search
+	self.Scale = scale
 	self.Cards = {}
 	self.Tabs = {}
+	self.Categories = {}
 	self.CurrentTab = nil
-	self.CurrentCategory = nil
+	self.CategoryOrder = 0
+	self.TabOrder = 0
 	
 	-- Search functionality
 	Search:GetPropertyChangedSignal("Text"):Connect(function()
@@ -169,22 +216,14 @@ end
 function SpareStackLib:FilterCards(query)
 	for _, card in pairs(self.Cards) do
 		if query == "" then
-			-- Show card if it belongs to current tab and category
 			if card:GetAttribute("Tab") == self.CurrentTab then
-				if self.CurrentCategory == nil or card:GetAttribute("Category") == self.CurrentCategory then
-					card.Visible = true
-				end
+				card.Visible = true
 			end
 		else
-			-- Search logic
 			local cardTitle = card:FindFirstChild("CardTitle")
 			if cardTitle and string.find(cardTitle.Text:lower(), query) then
 				if card:GetAttribute("Tab") == self.CurrentTab then
-					if self.CurrentCategory == nil or card:GetAttribute("Category") == self.CurrentCategory then
-						card.Visible = true
-					else
-						card.Visible = false
-					end
+					card.Visible = true
 				else
 					card.Visible = false
 				end
@@ -195,15 +234,52 @@ function SpareStackLib:FilterCards(query)
 	end
 end
 
--- Create a tab
-function SpareStackLib:CreateTab(tabName, tabImage)
+-- Add a category (gray text label)
+function SpareStackLib:AddCategory(categoryName)
+	self.CategoryOrder = self.CategoryOrder + 1
+	
+	local CategoryFrame = Instance.new("Frame")
+	CategoryFrame.Name = "Category_" .. categoryName
+	CategoryFrame.Parent = self.SideHolder
+	CategoryFrame.BackgroundTransparency = 1
+	CategoryFrame.Size = UDim2.new(0, 200 * self.Scale, 0, 31 * self.Scale)
+	CategoryFrame.LayoutOrder = self.CategoryOrder
+	
+	local CategoryText = Instance.new("TextLabel")
+	CategoryText.Name = "CategoryText"
+	CategoryText.Parent = CategoryFrame
+	CategoryText.BackgroundTransparency = 1
+	CategoryText.Size = UDim2.new(1, 0, 1, 0)
+	CategoryText.Font = Enum.Font.GothamBold
+	CategoryText.Text = categoryName
+	CategoryText.TextColor3 = Color3.fromRGB(58, 58, 73)
+	CategoryText.TextSize = 14 * self.Scale
+	CategoryText.TextXAlignment = Enum.TextXAlignment.Left
+	
+	self.Categories[categoryName] = {
+		Frame = CategoryFrame,
+		Tabs = {}
+	}
+	
+	return {
+		AddTab = function(_, tabName, tabImage)
+			return self:AddTab(tabName, tabImage, categoryName)
+		end
+	}
+end
+
+-- Add a tab (clickable with icon)
+function SpareStackLib:AddTab(tabName, tabImage, categoryName)
+	self.TabOrder = self.TabOrder + 1
+	
 	local Tab = Instance.new("Frame")
 	Tab.Name = "Tab_" .. tabName
 	Tab.Parent = self.SideHolder
 	Tab.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
 	Tab.BackgroundTransparency = 1
 	Tab.BorderSizePixel = 0
-	Tab.Size = UDim2.new(0, 238, 0, 41)
+	Tab.Size = UDim2.new(0, 238 * self.Scale, 0, 41 * self.Scale)
+	Tab.LayoutOrder = self.TabOrder
 	
 	local TabButton = Instance.new("TextButton")
 	TabButton.Parent = Tab
@@ -217,11 +293,11 @@ function SpareStackLib:CreateTab(tabName, tabImage)
 	TabText.Parent = Tab
 	TabText.BackgroundTransparency = 1
 	TabText.Position = UDim2.new(0.205, 0, 0, 0)
-	TabText.Size = UDim2.new(0, 214, 0, 41)
+	TabText.Size = UDim2.new(0.795, 0, 1, 0)
 	TabText.Font = Enum.Font.GothamBold
 	TabText.Text = tabName
 	TabText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TabText.TextSize = 14
+	TabText.TextSize = 14 * self.Scale
 	TabText.TextXAlignment = Enum.TextXAlignment.Left
 	
 	local TabImage = Instance.new("ImageLabel")
@@ -229,7 +305,7 @@ function SpareStackLib:CreateTab(tabName, tabImage)
 	TabImage.Parent = Tab
 	TabImage.BackgroundTransparency = 1
 	TabImage.Position = UDim2.new(0.08, 0, 0.244, 0)
-	TabImage.Size = UDim2.new(0, 20, 0, 20)
+	TabImage.Size = UDim2.new(0, 20 * self.Scale, 0, 20 * self.Scale)
 	TabImage.Image = tabImage or "rbxassetid://97584948400851"
 	
 	TabButton.MouseButton1Click:Connect(function()
@@ -238,57 +314,24 @@ function SpareStackLib:CreateTab(tabName, tabImage)
 	
 	self.Tabs[tabName] = {
 		Frame = Tab,
-		Categories = {},
+		Category = categoryName,
 		Cards = {}
 	}
+	
+	if categoryName and self.Categories[categoryName] then
+		table.insert(self.Categories[categoryName].Tabs, tabName)
+	end
 	
 	if not self.CurrentTab then
 		self:SwitchTab(tabName)
 	end
 	
-	return {
-		AddCategory = function(_, categoryName)
-			return self:AddCategory(tabName, categoryName)
-		end
-	}
-end
-
--- Add category to a tab
-function SpareStackLib:AddCategory(tabName, categoryName)
-	if not self.Tabs[tabName] then return end
-	
-	local CategoryFrame = Instance.new("Frame")
-	CategoryFrame.Name = "Category_" .. categoryName
-	CategoryFrame.Parent = self.SideHolder
-	CategoryFrame.BackgroundTransparency = 1
-	CategoryFrame.Size = UDim2.new(0, 238, 0, 31)
-	CategoryFrame.Visible = false
-	
-	local CategoryText = Instance.new("TextLabel")
-	CategoryText.Name = "CategoryText"
-	CategoryText.Parent = CategoryFrame
-	CategoryText.BackgroundTransparency = 1
-	CategoryText.Size = UDim2.new(0, 186, 0, 31)
-	CategoryText.Font = Enum.Font.GothamBold
-	CategoryText.Text = categoryName
-	CategoryText.TextColor3 = Color3.fromRGB(58, 58, 73)
-	CategoryText.TextSize = 14
-	CategoryText.TextXAlignment = Enum.TextXAlignment.Left
-	
-	table.insert(self.Tabs[tabName].Categories, {
-		Name = categoryName,
-		Frame = CategoryFrame
-	})
-	
-	return categoryName
+	return tabName
 end
 
 -- Switch between tabs
 function SpareStackLib:SwitchTab(tabName)
 	self.CurrentTab = tabName
-	self.CurrentCategory = nil
-	
-	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	
 	-- Update tab appearances
 	for name, tab in pairs(self.Tabs) do
@@ -296,19 +339,9 @@ function SpareStackLib:SwitchTab(tabName)
 			-- Selected tab: solid background
 			tab.Frame.BackgroundTransparency = 0
 			tab.Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 27) -- #14141B
-			
-			-- Show categories for this tab
-			for _, category in pairs(tab.Categories) do
-				category.Frame.Visible = true
-			end
 		else
 			-- Unselected tab: transparent background (only text visible)
 			tab.Frame.BackgroundTransparency = 1
-			
-			-- Hide categories
-			for _, category in pairs(tab.Categories) do
-				category.Frame.Visible = false
-			end
 		end
 	end
 	
@@ -323,34 +356,29 @@ function SpareStackLib:SwitchTab(tabName)
 end
 
 -- Create a card
-function SpareStackLib:CreateCard(cardTitle, tabName, categoryName)
+function SpareStackLib:CreateCard(cardTitle, tabName)
 	local Card = Instance.new("Frame")
 	Card.Name = "Card_" .. cardTitle
 	Card.Parent = self.CardHolder
-	Card.AnchorPoint = Vector2.new(0.5, 0.5)
 	Card.BackgroundTransparency = 1
 	Card.BorderSizePixel = 0
-	Card.Position = UDim2.new(0.25, 0, 0.5, 0)
-	Card.Size = UDim2.new(0, 356, 0, 400) -- Increased height to prevent squishing
+	Card.Size = UDim2.new(0, 356 * self.Scale, 0, 450 * self.Scale)
 	Card:SetAttribute("Tab", tabName)
-	if categoryName then
-		Card:SetAttribute("Category", categoryName)
-	end
 	
 	local CardIcon = Instance.new("ImageLabel")
 	CardIcon.Name = "Icon"
 	CardIcon.Parent = Card
 	CardIcon.BackgroundTransparency = 1
 	CardIcon.Position = UDim2.new(0.045, 0, 0.045, 0)
-	CardIcon.Size = UDim2.new(0, 20, 0, 20)
+	CardIcon.Size = UDim2.new(0, 20 * self.Scale, 0, 20 * self.Scale)
 	CardIcon.Image = "rbxassetid://97584948400851"
 	
 	local CardBackground = Instance.new("ImageLabel")
 	CardBackground.Name = "Background"
 	CardBackground.Parent = Card
 	CardBackground.BackgroundTransparency = 1
-	CardBackground.Position = UDim2.new(0, 0, 0.125, 0)
-	CardBackground.Size = UDim2.new(1, 0, 0.875, 0)
+	CardBackground.Position = UDim2.new(0, 0, 0.11, 0)
+	CardBackground.Size = UDim2.new(1, 0, 0.89, 0)
 	CardBackground.ZIndex = 0
 	CardBackground.Image = "rbxassetid://79172856971491"
 	CardBackground.ScaleType = Enum.ScaleType.Stretch
@@ -360,18 +388,18 @@ function SpareStackLib:CreateCard(cardTitle, tabName, categoryName)
 	CardTitleLabel.Parent = Card
 	CardTitleLabel.BackgroundTransparency = 1
 	CardTitleLabel.Position = UDim2.new(0.129, 0, 0, 0)
-	CardTitleLabel.Size = UDim2.new(0, 310, 0, 50)
+	CardTitleLabel.Size = UDim2.new(0.87, 0, 0, 50 * self.Scale)
 	CardTitleLabel.Font = Enum.Font.GothamBold
 	CardTitleLabel.Text = cardTitle
 	CardTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	CardTitleLabel.TextSize = 14
+	CardTitleLabel.TextSize = 14 * self.Scale
 	CardTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	
 	local Placard = Instance.new("ImageLabel")
 	Placard.Name = "Placard"
 	Placard.Parent = Card
 	Placard.BackgroundTransparency = 1
-	Placard.Size = UDim2.new(0, 356, 0, 50)
+	Placard.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
 	Placard.ZIndex = 0
 	Placard.Image = "rbxassetid://91296368223791"
 	Placard.ScaleType = Enum.ScaleType.Stretch
@@ -380,8 +408,8 @@ function SpareStackLib:CreateCard(cardTitle, tabName, categoryName)
 	ElementsHolder.Name = "ElementsHolder"
 	ElementsHolder.Parent = Card
 	ElementsHolder.BackgroundTransparency = 1
-	ElementsHolder.Position = UDim2.new(0.045, 0, 0.125, 0)
-	ElementsHolder.Size = UDim2.new(0.91, 0, 0.85, 0)
+	ElementsHolder.Position = UDim2.new(0.045, 0, 0.12, 0)
+	ElementsHolder.Size = UDim2.new(0.91, 0, 0.86, 0)
 	ElementsHolder.ClipsDescendants = false
 	
 	table.insert(self.Cards, Card)
@@ -394,27 +422,48 @@ function SpareStackLib:CreateCard(cardTitle, tabName, categoryName)
 	return {
 		Card = Card,
 		ElementsHolder = ElementsHolder,
-		AddToggle = function(_, name, callback)
+		AddToggle = function(_, name, default, callback)
 			local yPos = elementYPos
-			elementYPos = elementYPos + 65
-			return self:AddToggle(ElementsHolder, name, callback, yPos)
+			elementYPos = elementYPos + 60 * self.Scale
+			return self:AddToggle(ElementsHolder, name, default, callback, yPos)
 		end,
 		AddSlider = function(_, name, min, max, default, callback)
 			local yPos = elementYPos
-			elementYPos = elementYPos + 70
+			elementYPos = elementYPos + 75 * self.Scale
 			return self:AddSlider(ElementsHolder, name, min, max, default, callback, yPos)
 		end,
-		AddDropdown = function(_, name, options, callback)
+		AddDropdown = function(_, name, options, default, callback)
 			local yPos = elementYPos
-			elementYPos = elementYPos + 50
-			return self:AddDropdown(ElementsHolder, name, options, callback, yPos)
+			elementYPos = elementYPos + 55 * self.Scale
+			return self:AddDropdown(ElementsHolder, name, options, default, callback, yPos)
+		end,
+		AddButton = function(_, name, callback)
+			local yPos = elementYPos
+			elementYPos = elementYPos + 50 * self.Scale
+			return self:AddButton(ElementsHolder, name, callback, yPos)
+		end,
+		AddTextBox = function(_, name, placeholder, callback)
+			local yPos = elementYPos
+			elementYPos = elementYPos + 55 * self.Scale
+			return self:AddTextBox(ElementsHolder, name, placeholder, callback, yPos)
+		end,
+		AddColorPicker = function(_, name, default, callback)
+			local yPos = elementYPos
+			elementYPos = elementYPos + 60 * self.Scale
+			return self:AddColorPicker(ElementsHolder, name, default, callback, yPos)
+		end,
+		AddKeybind = function(_, name, default, callback)
+			local yPos = elementYPos
+			elementYPos = elementYPos + 55 * self.Scale
+			return self:AddKeybind(ElementsHolder, name, default, callback, yPos)
 		end,
 	}
 end
 
 -- Add Toggle
-function SpareStackLib:AddToggle(parent, name, callback, yPos)
+function SpareStackLib:AddToggle(parent, name, default, callback, yPos)
 	callback = callback or function() end
+	default = default or false
 	yPos = yPos or 0
 	
 	local Title = Instance.new("TextLabel")
@@ -422,20 +471,20 @@ function SpareStackLib:AddToggle(parent, name, callback, yPos)
 	Title.Parent = parent
 	Title.BackgroundTransparency = 1
 	Title.Position = UDim2.new(0, 0, 0, yPos)
-	Title.Size = UDim2.new(1, 0, 0, 50)
+	Title.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
 	Title.Font = Enum.Font.GothamBold
 	Title.Text = name
-	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Title.TextSize = 14
+	Title.TextColor3 = default and Color3.fromRGB(58, 58, 73) or Color3.fromRGB(255, 255, 255)
+	Title.TextSize = 14 * self.Scale
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	
 	local Background_2 = Instance.new("TextButton")
 	Background_2.Name = "Background"
 	Background_2.Parent = Title
-	Background_2.BackgroundColor3 = Color3.fromRGB(28, 48, 103)
+	Background_2.BackgroundColor3 = default and Color3.fromRGB(21, 21, 28) or Color3.fromRGB(28, 48, 103)
 	Background_2.BorderSizePixel = 0
 	Background_2.Position = UDim2.new(0.942, 0, 0.3, 0)
-	Background_2.Size = UDim2.new(0, 35, 0, 20)
+	Background_2.Size = UDim2.new(0, 35 * self.Scale, 0, 20 * self.Scale)
 	Background_2.Text = ""
 	
 	local BgCorner = Instance.new("UICorner")
@@ -445,17 +494,17 @@ function SpareStackLib:AddToggle(parent, name, callback, yPos)
 	local Orb = Instance.new("TextButton")
 	Orb.Name = "Orb"
 	Orb.Parent = Title
-	Orb.BackgroundColor3 = Color3.fromRGB(51, 105, 255)
+	Orb.BackgroundColor3 = default and Color3.fromRGB(37, 37, 57) or Color3.fromRGB(51, 105, 255)
 	Orb.BorderSizePixel = 0
-	Orb.Position = UDim2.new(1, 0, 0.37, 0)
-	Orb.Size = UDim2.new(0, 13, 0, 13)
+	Orb.Position = UDim2.new(default and 0.958 or 1, 0, 0.37, 0)
+	Orb.Size = UDim2.new(0, 13 * self.Scale, 0, 13 * self.Scale)
 	Orb.Text = ""
 	
 	local OrbCorner = Instance.new("UICorner")
 	OrbCorner.CornerRadius = UDim.new(1, 0)
 	OrbCorner.Parent = Orb
 	
-	local toggled = false
+	local toggled = default
 	local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	
 	local function toggle()
@@ -483,7 +532,15 @@ function SpareStackLib:AddToggle(parent, name, callback, yPos)
 	Background_2.MouseButton1Click:Connect(toggle)
 	Orb.MouseButton1Click:Connect(toggle)
 	
-	return {Toggle = toggle}
+	return {
+		Toggle = toggle,
+		SetValue = function(value)
+			if value ~= toggled then
+				toggle()
+			end
+		end,
+		GetValue = function() return toggled end
+	}
 end
 
 -- Add Slider
@@ -499,27 +556,27 @@ function SpareStackLib:AddSlider(parent, name, min, max, default, callback, yPos
 	SliderFrame.Parent = parent
 	SliderFrame.BackgroundTransparency = 1
 	SliderFrame.Position = UDim2.new(0, 0, 0, yPos)
-	SliderFrame.Size = UDim2.new(1, 0, 0, 65)
+	SliderFrame.Size = UDim2.new(1, 0, 0, 70 * self.Scale)
 	
 	local Title = Instance.new("TextLabel")
 	Title.Parent = SliderFrame
 	Title.BackgroundTransparency = 1
-	Title.Size = UDim2.new(1, 0, 0, 25)
+	Title.Size = UDim2.new(0.7, 0, 0, 25 * self.Scale)
 	Title.Font = Enum.Font.GothamBold
 	Title.Text = name
 	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Title.TextSize = 14
+	Title.TextSize = 14 * self.Scale
 	Title.TextXAlignment = Enum.TextXAlignment.Left
 	
 	local ValueLabel = Instance.new("TextBox")
 	ValueLabel.Parent = Title
 	ValueLabel.BackgroundTransparency = 1
-	ValueLabel.Position = UDim2.new(0.7, 0, 0, 0)
-	ValueLabel.Size = UDim2.new(0.3, 0, 1, 0)
+	ValueLabel.Position = UDim2.new(1, 0, 0, 0)
+	ValueLabel.Size = UDim2.new(0, 60 * self.Scale, 1, 0)
 	ValueLabel.Font = Enum.Font.Gotham
 	ValueLabel.Text = "0%"
 	ValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	ValueLabel.TextSize = 14
+	ValueLabel.TextSize = 14 * self.Scale
 	ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
 	
 	local Bar = Instance.new("Frame")
@@ -528,7 +585,7 @@ function SpareStackLib:AddSlider(parent, name, min, max, default, callback, yPos
 	Bar.BackgroundColor3 = Color3.fromRGB(21, 21, 27)
 	Bar.BorderSizePixel = 0
 	Bar.Position = UDim2.new(0, 0, 0.5, 0)
-	Bar.Size = UDim2.new(1, 0, 0, 9)
+	Bar.Size = UDim2.new(1, 0, 0, 9 * self.Scale)
 	
 	local BarCorner = Instance.new("UICorner")
 	BarCorner.Parent = Bar
@@ -548,8 +605,8 @@ function SpareStackLib:AddSlider(parent, name, min, max, default, callback, yPos
 	Knob.Parent = Bar
 	Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Knob.BorderSizePixel = 0
-	Knob.Position = UDim2.new(0, -10, -0.3, 0)
-	Knob.Size = UDim2.new(0, 21, 0, 11)
+	Knob.Position = UDim2.new(0, -10 * self.Scale, -0.3, 0)
+	Knob.Size = UDim2.new(0, 21 * self.Scale, 0, 11 * self.Scale)
 	Knob.ZIndex = 2
 	Knob.Text = ""
 	
@@ -558,19 +615,21 @@ function SpareStackLib:AddSlider(parent, name, min, max, default, callback, yPos
 	KnobCorner.Parent = Knob
 	
 	local dragging = false
+	local currentValue = default
 	
 	local function updateSlider(mouseX)
 		local barWidth = Bar.AbsoluteSize.X
 		mouseX = math.clamp(mouseX, 0, barWidth)
 		
-		Knob.Position = UDim2.new(0, mouseX - 10, -0.3, 0)
+		Knob.Position = UDim2.new(0, mouseX - (10 * self.Scale), -0.3, 0)
 		Fill.Size = UDim2.new(0, mouseX, 1, 0)
 		
 		local percent = mouseX / barWidth
 		local value = min + (percent * (max - min))
-		ValueLabel.Text = math.floor(value) .. (max == 100 and "%" or "")
+		currentValue = math.floor(value)
+		ValueLabel.Text = currentValue .. (max == 100 and "%" or "")
 		
-		callback(math.floor(value))
+		callback(currentValue)
 	end
 	
 	Knob.MouseButton1Down:Connect(function()
@@ -609,13 +668,19 @@ function SpareStackLib:AddSlider(parent, name, min, max, default, callback, yPos
 	local initPercent = (default - min) / (max - min)
 	updateSlider(initPercent * Bar.AbsoluteSize.X)
 	
-	return {SetValue = function(val) updateSlider(((val - min) / (max - min)) * Bar.AbsoluteSize.X) end}
+	return {
+		SetValue = function(val)
+			updateSlider(((val - min) / (max - min)) * Bar.AbsoluteSize.X)
+		end,
+		GetValue = function() return currentValue end
+	}
 end
 
 -- Add Dropdown
-function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
+function SpareStackLib:AddDropdown(parent, name, options, default, callback, yPos)
 	callback = callback or function() end
 	options = options or {"Option 1", "Option 2"}
+	default = default or options[1]
 	yPos = yPos or 0
 	
 	local DropdownFrame = Instance.new("Frame")
@@ -623,7 +688,7 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 	DropdownFrame.Parent = parent
 	DropdownFrame.BackgroundTransparency = 1
 	DropdownFrame.Position = UDim2.new(0, 0, 0, yPos)
-	DropdownFrame.Size = UDim2.new(1, 0, 0, 45)
+	DropdownFrame.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
 	DropdownFrame.ClipsDescendants = false
 	DropdownFrame.ZIndex = 5
 	
@@ -632,11 +697,11 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 	Dropdown.Parent = DropdownFrame
 	Dropdown.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
 	Dropdown.BorderSizePixel = 0
-	Dropdown.Size = UDim2.new(1, 0, 0, 36)
-	Dropdown.Font = Enum.Font.Gotham -- Using Gotham as Inter isn't available, closest match
-	Dropdown.Text = "  " .. options[1]
+	Dropdown.Size = UDim2.new(1, 0, 0, 36 * self.Scale)
+	Dropdown.Font = Enum.Font.Gotham
+	Dropdown.Text = "  " .. default
 	Dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Dropdown.TextSize = 14
+	Dropdown.TextSize = 14 * self.Scale
 	Dropdown.TextXAlignment = Enum.TextXAlignment.Left
 	
 	local DropdownCorner = Instance.new("UICorner")
@@ -645,28 +710,28 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 	
 	local DropdownPadding = Instance.new("UIPadding")
 	DropdownPadding.Parent = Dropdown
-	DropdownPadding.PaddingLeft = UDim.new(0, 10)
+	DropdownPadding.PaddingLeft = UDim.new(0, 10 * self.Scale)
 	
 	local Arrow = Instance.new("TextLabel")
 	Arrow.Name = "Arrow"
 	Arrow.Parent = Dropdown
 	Arrow.BackgroundTransparency = 1
 	Arrow.Position = UDim2.new(0.88, 0, 0.22, 0)
-	Arrow.Size = UDim2.new(0, 20, 0, 20)
+	Arrow.Size = UDim2.new(0, 20 * self.Scale, 0, 20 * self.Scale)
 	Arrow.Font = Enum.Font.GothamBold
 	Arrow.Text = "▼"
 	Arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Arrow.TextSize = 14
+	Arrow.TextSize = 14 * self.Scale
 	
 	local OptionsHolder = Instance.new("ScrollingFrame")
 	OptionsHolder.Name = "Options"
 	OptionsHolder.Parent = DropdownFrame
 	OptionsHolder.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
 	OptionsHolder.BorderSizePixel = 0
-	OptionsHolder.Position = UDim2.new(0, 0, 0, 41)
+	OptionsHolder.Position = UDim2.new(0, 0, 0, 41 * self.Scale)
 	OptionsHolder.Size = UDim2.new(1, 0, 0, 0)
 	OptionsHolder.Visible = false
-	OptionsHolder.ScrollBarThickness = 0
+	OptionsHolder.ScrollBarThickness = 5
 	OptionsHolder.ClipsDescendants = true
 	OptionsHolder.ZIndex = 10
 	
@@ -681,13 +746,14 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 	
 	local OptionsPadding = Instance.new("UIPadding")
 	OptionsPadding.Parent = OptionsHolder
-	OptionsPadding.PaddingLeft = UDim.new(0, 10)
-	OptionsPadding.PaddingRight = UDim.new(0, 10)
-	OptionsPadding.PaddingTop = UDim.new(0, 10)
-	OptionsPadding.PaddingBottom = UDim.new(0, 10)
+	OptionsPadding.PaddingLeft = UDim.new(0, 10 * self.Scale)
+	OptionsPadding.PaddingRight = UDim.new(0, 10 * self.Scale)
+	OptionsPadding.PaddingTop = UDim.new(0, 10 * self.Scale)
+	OptionsPadding.PaddingBottom = UDim.new(0, 10 * self.Scale)
 	
 	local isOpen = false
 	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	local selectedValue = default
 	
 	for i, optionText in ipairs(options) do
 		local Option = Instance.new("TextButton")
@@ -696,11 +762,11 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 		Option.BackgroundColor3 = Color3.fromRGB(27, 27, 36)
 		Option.BackgroundTransparency = 1
 		Option.BorderSizePixel = 0
-		Option.Size = UDim2.new(1, -20, 0, 30)
-		Option.Font = Enum.Font.Gotham -- Inter font equivalent
+		Option.Size = UDim2.new(1, -20 * self.Scale, 0, 30 * self.Scale)
+		Option.Font = Enum.Font.Gotham
 		Option.Text = "  " .. optionText
 		Option.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Option.TextSize = 13
+		Option.TextSize = 13 * self.Scale
 		Option.TextXAlignment = Enum.TextXAlignment.Left
 		Option.ZIndex = 11
 		
@@ -710,10 +776,11 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 		
 		local OptionPadding = Instance.new("UIPadding")
 		OptionPadding.Parent = Option
-		OptionPadding.PaddingLeft = UDim.new(0, 10)
+		OptionPadding.PaddingLeft = UDim.new(0, 10 * self.Scale)
 		
 		Option.MouseButton1Click:Connect(function()
 			Dropdown.Text = "  " .. optionText
+			selectedValue = optionText
 			callback(optionText)
 			
 			isOpen = false
@@ -731,14 +798,14 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 		end)
 	end
 	
-	local dropdownHeight = math.min(#options * 35 + 20, 150)
+	local dropdownHeight = math.min(#options * 35 * self.Scale + 20 * self.Scale, 150 * self.Scale)
 	
 	Dropdown.MouseButton1Click:Connect(function()
 		isOpen = not isOpen
 		
 		if isOpen then
 			OptionsHolder.Visible = true
-			OptionsHolder.CanvasSize = UDim2.new(0, 0, 0, #options * 35 + 20)
+			OptionsHolder.CanvasSize = UDim2.new(0, 0, 0, #options * 35 * self.Scale + 20 * self.Scale)
 			TweenService:Create(OptionsHolder, tweenInfo, {Size = UDim2.new(1, 0, 0, dropdownHeight)}):Play()
 			TweenService:Create(Arrow, tweenInfo, {Rotation = 180}):Play()
 		else
@@ -751,7 +818,332 @@ function SpareStackLib:AddDropdown(parent, name, options, callback, yPos)
 		end
 	end)
 	
-	return {SetValue = function(val) Dropdown.Text = "  " .. val end}
+	return {
+		SetValue = function(val)
+			Dropdown.Text = "  " .. val
+			selectedValue = val
+		end,
+		GetValue = function() return selectedValue end,
+		Refresh = function(newOptions)
+			for _, child in pairs(OptionsHolder:GetChildren()) do
+				if child:IsA("TextButton") then
+					child:Destroy()
+				end
+			end
+			
+			for i, optionText in ipairs(newOptions) do
+				local Option = Instance.new("TextButton")
+				Option.Name = "Option_" .. i
+				Option.Parent = OptionsHolder
+				Option.BackgroundColor3 = Color3.fromRGB(27, 27, 36)
+				Option.BackgroundTransparency = 1
+				Option.BorderSizePixel = 0
+				Option.Size = UDim2.new(1, -20 * self.Scale, 0, 30 * self.Scale)
+				Option.Font = Enum.Font.Gotham
+				Option.Text = "  " .. optionText
+				Option.TextColor3 = Color3.fromRGB(255, 255, 255)
+				Option.TextSize = 13 * self.Scale
+				Option.TextXAlignment = Enum.TextXAlignment.Left
+				Option.ZIndex = 11
+				
+				local OptionCorner = Instance.new("UICorner")
+				OptionCorner.CornerRadius = UDim.new(0, 3)
+				OptionCorner.Parent = Option
+				
+				local OptionPadding = Instance.new("UIPadding")
+				OptionPadding.Parent = Option
+				OptionPadding.PaddingLeft = UDim.new(0, 10 * self.Scale)
+				
+				Option.MouseButton1Click:Connect(function()
+					Dropdown.Text = "  " .. optionText
+					selectedValue = optionText
+					callback(optionText)
+					
+					isOpen = false
+					OptionsHolder.Visible = false
+					TweenService:Create(OptionsHolder, tweenInfo, {Size = UDim2.new(1, 0, 0, 0)}):Play()
+					TweenService:Create(Arrow, tweenInfo, {Rotation = 0}):Play()
+				end)
+				
+				Option.MouseEnter:Connect(function()
+					TweenService:Create(Option, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+				end)
+				
+				Option.MouseLeave:Connect(function()
+					TweenService:Create(Option, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+				end)
+			end
+		end
+	}
+end
+
+-- Add Button
+function SpareStackLib:AddButton(parent, name, callback, yPos)
+	callback = callback or function() end
+	yPos = yPos or 0
+	
+	local Button = Instance.new("TextButton")
+	Button.Name = "Button_" .. name
+	Button.Parent = parent
+	Button.BackgroundColor3 = Color3.fromRGB(51, 105, 255)
+	Button.BorderSizePixel = 0
+	Button.Position = UDim2.new(0, 0, 0, yPos)
+	Button.Size = UDim2.new(1, 0, 0, 40 * self.Scale)
+	Button.Font = Enum.Font.GothamBold
+	Button.Text = name
+	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Button.TextSize = 14 * self.Scale
+	
+	local ButtonCorner = Instance.new("UICorner")
+	ButtonCorner.CornerRadius = UDim.new(0, 5)
+	ButtonCorner.Parent = Button
+	
+	Button.MouseButton1Click:Connect(function()
+		callback()
+		
+		TweenService:Create(Button, TweenInfo.new(0.1), {
+			BackgroundColor3 = Color3.fromRGB(41, 85, 200)
+		}):Play()
+		task.wait(0.1)
+		TweenService:Create(Button, TweenInfo.new(0.1), {
+			BackgroundColor3 = Color3.fromRGB(51, 105, 255)
+		}):Play()
+	end)
+	
+	return Button
+end
+
+-- Add TextBox
+function SpareStackLib:AddTextBox(parent, name, placeholder, callback, yPos)
+	callback = callback or function() end
+	placeholder = placeholder or "Enter text..."
+	yPos = yPos or 0
+	
+	local TextBoxFrame = Instance.new("Frame")
+	TextBoxFrame.Name = "TextBox_" .. name
+	TextBoxFrame.Parent = parent
+	TextBoxFrame.BackgroundTransparency = 1
+	TextBoxFrame.Position = UDim2.new(0, 0, 0, yPos)
+	TextBoxFrame.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
+	
+	local Title = Instance.new("TextLabel")
+	Title.Parent = TextBoxFrame
+	Title.BackgroundTransparency = 1
+	Title.Size = UDim2.new(1, 0, 0, 20 * self.Scale)
+	Title.Font = Enum.Font.GothamBold
+	Title.Text = name
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.TextSize = 14 * self.Scale
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local TextBox = Instance.new("TextBox")
+	TextBox.Parent = TextBoxFrame
+	TextBox.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
+	TextBox.BorderSizePixel = 0
+	TextBox.Position = UDim2.new(0, 0, 0, 25 * self.Scale)
+	TextBox.Size = UDim2.new(1, 0, 0, 30 * self.Scale)
+	TextBox.Font = Enum.Font.Gotham
+	TextBox.PlaceholderText = placeholder
+	TextBox.Text = ""
+	TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextBox.TextSize = 13 * self.Scale
+	TextBox.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local TextBoxCorner = Instance.new("UICorner")
+	TextBoxCorner.CornerRadius = UDim.new(0, 3)
+	TextBoxCorner.Parent = TextBox
+	
+	local TextBoxPadding = Instance.new("UIPadding")
+	TextBoxPadding.Parent = TextBox
+	TextBoxPadding.PaddingLeft = UDim.new(0, 10 * self.Scale)
+	
+	TextBox.FocusLost:Connect(function()
+		callback(TextBox.Text)
+	end)
+	
+	return {
+		SetValue = function(val) TextBox.Text = val end,
+		GetValue = function() return TextBox.Text end
+	}
+end
+
+-- Add ColorPicker
+function SpareStackLib:AddColorPicker(parent, name, default, callback, yPos)
+	callback = callback or function() end
+	default = default or Color3.fromRGB(255, 255, 255)
+	yPos = yPos or 0
+	
+	local ColorPickerFrame = Instance.new("Frame")
+	ColorPickerFrame.Name = "ColorPicker_" .. name
+	ColorPickerFrame.Parent = parent
+	ColorPickerFrame.BackgroundTransparency = 1
+	ColorPickerFrame.Position = UDim2.new(0, 0, 0, yPos)
+	ColorPickerFrame.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
+	
+	local Title = Instance.new("TextLabel")
+	Title.Parent = ColorPickerFrame
+	Title.BackgroundTransparency = 1
+	Title.Size = UDim2.new(0.7, 0, 1, 0)
+	Title.Font = Enum.Font.GothamBold
+	Title.Text = name
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.TextSize = 14 * self.Scale
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local ColorDisplay = Instance.new("TextButton")
+	ColorDisplay.Parent = ColorPickerFrame
+	ColorDisplay.BackgroundColor3 = default
+	ColorDisplay.BorderSizePixel = 0
+	ColorDisplay.Position = UDim2.new(0.8, 0, 0.25, 0)
+	ColorDisplay.Size = UDim2.new(0, 50 * self.Scale, 0, 25 * self.Scale)
+	ColorDisplay.Text = ""
+	
+	local ColorCorner = Instance.new("UICorner")
+	ColorCorner.CornerRadius = UDim.new(0, 3)
+	ColorCorner.Parent = ColorDisplay
+	
+	local currentColor = default
+	
+	ColorDisplay.MouseButton1Click:Connect(function()
+		-- Simple color picker (you can expand this)
+		local r = math.random(0, 255)
+		local g = math.random(0, 255)
+		local b = math.random(0, 255)
+		currentColor = Color3.fromRGB(r, g, b)
+		ColorDisplay.BackgroundColor3 = currentColor
+		callback(currentColor)
+	end)
+	
+	return {
+		SetValue = function(color)
+			currentColor = color
+			ColorDisplay.BackgroundColor3 = color
+		end,
+		GetValue = function() return currentColor end
+	}
+end
+
+-- Add Keybind
+function SpareStackLib:AddKeybind(parent, name, default, callback, yPos)
+	callback = callback or function() end
+	default = default or Enum.KeyCode.F
+	yPos = yPos or 0
+	
+	local KeybindFrame = Instance.new("Frame")
+	KeybindFrame.Name = "Keybind_" .. name
+	KeybindFrame.Parent = parent
+	KeybindFrame.BackgroundTransparency = 1
+	KeybindFrame.Position = UDim2.new(0, 0, 0, yPos)
+	KeybindFrame.Size = UDim2.new(1, 0, 0, 50 * self.Scale)
+	
+	local Title = Instance.new("TextLabel")
+	Title.Parent = KeybindFrame
+	Title.BackgroundTransparency = 1
+	Title.Size = UDim2.new(0.6, 0, 1, 0)
+	Title.Font = Enum.Font.GothamBold
+	Title.Text = name
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.TextSize = 14 * self.Scale
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local KeyButton = Instance.new("TextButton")
+	KeyButton.Parent = KeybindFrame
+	KeyButton.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
+	KeyButton.BorderSizePixel = 0
+	KeyButton.Position = UDim2.new(0.65, 0, 0.25, 0)
+	KeyButton.Size = UDim2.new(0, 80 * self.Scale, 0, 25 * self.Scale)
+	KeyButton.Font = Enum.Font.Gotham
+	KeyButton.Text = default.Name
+	KeyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	KeyButton.TextSize = 13 * self.Scale
+	
+	local KeyCorner = Instance.new("UICorner")
+	KeyCorner.CornerRadius = UDim.new(0, 3)
+	KeyCorner.Parent = KeyButton
+	
+	local currentKey = default
+	local listening = false
+	
+	KeyButton.MouseButton1Click:Connect(function()
+		if not listening then
+			listening = true
+			KeyButton.Text = "..."
+			
+			local connection
+			connection = UIS.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.Keyboard then
+					currentKey = input.KeyCode
+					KeyButton.Text = currentKey.Name
+					listening = false
+					callback(currentKey)
+					connection:Disconnect()
+				end
+			end)
+		end
+	end)
+	
+	return {
+		SetValue = function(key)
+			currentKey = key
+			KeyButton.Text = key.Name
+		end,
+		GetValue = function() return currentKey end
+	}
+end
+
+-- Notify function
+function SpareStackLib:Notify(title, text, duration)
+	duration = duration or 3
+	
+	local Notification = Instance.new("Frame")
+	Notification.Name = "Notification"
+	Notification.Parent = self.Gui
+	Notification.BackgroundColor3 = Color3.fromRGB(20, 20, 27)
+	Notification.BorderSizePixel = 0
+	Notification.Position = UDim2.new(0.5, -150 * self.Scale, 1, 100 * self.Scale)
+	Notification.Size = UDim2.new(0, 300 * self.Scale, 0, 80 * self.Scale)
+	Notification.AnchorPoint = Vector2.new(0.5, 1)
+	
+	local NotifCorner = Instance.new("UICorner")
+	NotifCorner.CornerRadius = UDim.new(0, 5)
+	NotifCorner.Parent = Notification
+	
+	local NotifTitle = Instance.new("TextLabel")
+	NotifTitle.Parent = Notification
+	NotifTitle.BackgroundTransparency = 1
+	NotifTitle.Position = UDim2.new(0, 10 * self.Scale, 0, 10 * self.Scale)
+	NotifTitle.Size = UDim2.new(1, -20 * self.Scale, 0, 25 * self.Scale)
+	NotifTitle.Font = Enum.Font.GothamBold
+	NotifTitle.Text = title
+	NotifTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	NotifTitle.TextSize = 16 * self.Scale
+	NotifTitle.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local NotifText = Instance.new("TextLabel")
+	NotifText.Parent = Notification
+	NotifText.BackgroundTransparency = 1
+	NotifText.Position = UDim2.new(0, 10 * self.Scale, 0, 35 * self.Scale)
+	NotifText.Size = UDim2.new(1, -20 * self.Scale, 1, -45 * self.Scale)
+	NotifText.Font = Enum.Font.Gotham
+	NotifText.Text = text
+	NotifText.TextColor3 = Color3.fromRGB(200, 200, 200)
+	NotifText.TextSize = 14 * self.Scale
+	NotifText.TextXAlignment = Enum.TextXAlignment.Left
+	NotifText.TextYAlignment = Enum.TextYAlignment.Top
+	NotifText.TextWrapped = true
+	
+	TweenService:Create(Notification, TweenInfo.new(0.5), {
+		Position = UDim2.new(0.5, -150 * self.Scale, 1, -20 * self.Scale)
+	}):Play()
+	
+	task.wait(duration)
+	
+	TweenService:Create(Notification, TweenInfo.new(0.5), {
+		Position = UDim2.new(0.5, -150 * self.Scale, 1, 100 * self.Scale)
+	}):Play()
+	
+	task.wait(0.5)
+	Notification:Destroy()
 end
 
 return SpareStackLib
